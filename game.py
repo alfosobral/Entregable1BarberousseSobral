@@ -1,11 +1,13 @@
 from typing import Dict, Tuple, Generator
 import functools
 import random
+from colorama import Fore, Style, init
+
+init(autoreset=True) # para que funcione en Windows/Linux
 
 # -_-_-_-_-_-_-_-_-_-
 # Funciones auxiliares
 # -_-_-_-_-_-_-_-_-_-
-
 
 def compose(*funcs):
     return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
@@ -17,6 +19,12 @@ def log_call(fn):
         print(f"[LOG] {fn.__name__}{args} -> {result}")
         return result
     return wrapper
+
+def color_text(text: str, color=None) -> str:
+    if color:
+        return f"{color}{text}{Style.RESET_ALL}"
+    else:
+        return text
 
 # -_-_-_-_-_-_-_-_-_-
 # Modelo de datos
@@ -124,12 +132,45 @@ def pure_step(state: State, player: str, throw: int) -> State:
 # suficientes
 
 def endgame(state: State) -> bool:
-    for p in state["players"]:
-        if state["positions"][p] >= BOXES and state["coins"][p] >= 1:
+    players = state["players"]
+    positions = state["positions"]
+    coins = state["coins"]
+    winners = [p for p in players if positions[p] >= BOXES and coins[p] >= 1]
+    if len(winners) == 1:
+        print(f"Ganó {winners[0]}")
+        return True
+    if len(winners) == 2:
+        if coins[players[0]] > coins[players[1]]:
+            print(f"Ganó {players[0]} por más monedas")
+        elif coins[players[1]] > coins[players[0]]:
+            print(f"Ganó {players[1]} por más monedas")
+        else:
+            print("Empate: ambos tienen la misma cantidad de monedas")
+        return True
+    for p in players:
+        if coins[p] == 0:
+            print(f"Ganó {players[1] if p == players[0] else players[0]} porque {p} se quedó sin monedas")
             return True
-        if state["coins"][p] == 0:
-            return True 
     return False
+
+# -_-_-_-_-_-_-_-_-_-
+# Tablero visual
+# -_-_-_-_-_-_-_-_-_-
+
+def board(state: State) -> None:
+    def board_cell(i: int) -> str:
+        cell = str(i)
+        for p, pos in state["positions"].items():
+            if pos == i:
+                cell = color_text(f"[{p[0]}]", Fore.CYAN)
+        if i in state["move"]:
+            cell += color_text("*", Fore.MAGENTA)
+        if i in state["econ"]:
+            cell += color_text("$", Fore.YELLOW)
+        return cell.rjust(5) 
+    board_im = "".join(map(board_cell, range(1, BOXES + 1)))
+    print(board_im)
+
 
 # -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
@@ -150,18 +191,64 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
 # -_-_-_-_-_-_-_-_-_-
 
 if __name__ == "__main__":
-    jumps, econ = generate_special_boxes()
-    initial_state = {
-        "players": ("P1", "P2"),
-        "positions": {"P1": 0, "P2": 0},
-        "coins": {"P1": START_COINS, "P2": START_COINS},
-        "move": jumps,
-        "econ": econ,
-    }
+    while True:
+        while True:
+            mode = input("Seleccione el mode de juego: Simulacion (s) | Iterativo (i) --> ")
+            if mode in ("s", "i"):
+                break
+            print("El modo de juego no es correcto. Por favor ingrese un modo valido...")
+        jumps, econ = generate_special_boxes()
+        if mode == "i":
+            name1 = input("Nombre del jugador 1: ")
+            name2 = input("Nombre de jugador 2: ")
+            players = (name1, name2)
+        elif mode == "s":
+            players = ("Jugador1", "Jugador2")
+        else: 
+            print("El modo dejuego no es correcto")
 
-    dice = generate_random_dice()
-    for st in simul(initial_state, dice):
-        print(st)
-        if endgame(st):
-            print("JUEGO TERMINADO")
+        initial_state = {
+            "players": players,
+            "positions": {players[0]: 0, players[1]: 0},
+            "coins": {players[0]: START_COINS, players[1]: START_COINS},
+            "move": jumps,
+            "econ": econ,
+        }
+
+        dice = generate_random_dice()
+        if mode == "i":
+            state = initial_state
+            while not endgame(state):
+                for player in state["players"]:
+                    input(f"Turno de {player}. Presiona Enter para tirar el dado...")
+                    throw = next(dice)
+                    print(f"{player} sacó un {throw}")
+                    old_pos = state["positions"][player]
+                    new_pos = min(BOXES, old_pos + throw)
+                    bonus_jump = state["move"].get(new_pos, 0)
+                    bonus_econ = state["econ"].get(new_pos, 0)
+                    print(f"Casilla: {new_pos}")
+                    if bonus_jump:
+                        print(f"Bonus de salto: {bonus_jump}")
+                    if bonus_econ:
+                        print(f"Bonus de monedas: {bonus_econ}")
+                    state = pure_step(state, player, throw)
+                    board(state)
+                    print(f"Estado del tablero: {state}")
+                    if endgame(state):
+                        print("FIN DEL JUEGO")
+                        break    
+        elif mode == "s": 
+            for st in simul(initial_state, dice):
+                board(st)
+                if endgame(st):
+                    print("FIN DEL JUEGO")
+                    break
+        
+        again = input("¿Quieres volver a jugar? (s/n): ")
+        if again == "n":
+            print("Gracias por jugar!!!")
             break
+    
+
+        
