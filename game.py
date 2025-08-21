@@ -169,8 +169,7 @@ def board(state: State) -> None:
             cell += color_text("$", Fore.YELLOW)
         return cell.rjust(5) 
     board_im = "".join(map(board_cell, range(1, BOXES + 1)))
-    print(board_im)
-
+    print(board)
 
 # -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
@@ -233,14 +232,13 @@ if __name__ == "__main__":
                     if bonus_econ:
                         print(f"Bonus de monedas: {bonus_econ}")
                     state = pure_step(state, player, throw)
-                    board(state)
                     print(f"Estado del tablero: {state}")
                     if endgame(state):
                         print("FIN DEL JUEGO")
                         break    
         elif mode == "s": 
             for st in simul(initial_state, dice):
-                board(st)
+                print(st)
                 if endgame(st):
                     print("FIN DEL JUEGO")
                     break
