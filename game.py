@@ -2,12 +2,24 @@ from typing import Dict, Tuple, Generator
 import functools
 import random
 from colorama import Fore, Style, init
+import os
+from colorama import Fore, Style
+import re
+import time
 
 init(autoreset=True) # para que funcione en Windows/Linux
 
 # -_-_-_-_-_-_-_-_-_-
 # Funciones auxiliares
 # -_-_-_-_-_-_-_-_-_-
+
+def clear_console():
+    # Windows
+    if os.name == "nt":
+        os.system("cls")
+    # Linux / Mac
+    else:
+        os.system("clear")
 
 def compose(*funcs):
     return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
@@ -16,7 +28,7 @@ def log_call(fn):
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         result = fn(*args, **kwargs)
-        print(f"[LOG] {fn.__name__}{args} -> {result}")
+        #print(f"[LOG] {fn.__name__}{args} -> {result}")
         return result
     return wrapper
 
@@ -35,6 +47,14 @@ def color_text(text: str, color=None) -> str:
 
 BOXES = 30
 START_COINS = 2
+COLORS = {
+    "J1": Fore.RED,
+    "J2": Fore.BLUE,
+    "mov": Fore.CYAN,
+    "econ": Fore.YELLOW,
+}
+RESET = Style.RESET_ALL
+ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
 
 State = Dict[str, object]
 
@@ -157,20 +177,53 @@ def endgame(state: State) -> bool:
 # Tablero visual
 # -_-_-_-_-_-_-_-_-_-
 
-def board(state: State) -> None:
-    def board_cell(i: int) -> str:
-        cell = str(i)
-        for p, pos in state["positions"].items():
-            if pos == i:
-                cell = color_text(f"[{p[0]}]", Fore.CYAN)
-        if i in state["move"]:
-            cell += color_text("*", Fore.MAGENTA)
-        if i in state["econ"]:
-            cell += color_text("$", Fore.YELLOW)
-        return cell.rjust(5) 
-    board_im = "".join(map(board_cell, range(1, BOXES + 1)))
-    print(board)
+def visible_len(s: str) -> int:
+    return len(ANSI_RE.sub('', s))
 
+def pad_center_visible(s: str, width: int) -> str:
+    v = visible_len(s)
+    if v >= width:
+        return s
+    total_pad = width - v
+    left = total_pad // 2
+    right = total_pad - left
+    return ' ' * left + s + ' ' * right
+
+def format_cell(i: int, state, width: int = 5) -> str:
+    base = f"{i:02}"
+
+    players_here = [p for p, pos in state["positions"].items() if pos == i]
+    if players_here:
+        names = list(state["positions"].keys())
+        who = players_here[0]
+        idx = names.index(who)  # 0 -> J1, 1 -> J2
+        color = COLORS["J1"] if idx == 0 else COLORS["J2"]
+        base = f"[{who[0].upper()}]"
+        base = f"{color}{base}{RESET}"
+
+    suffix = ""
+    if i in state["move"]:
+        suffix += f"{COLORS['mov']}*{RESET}"
+    if i in state["econ"]:
+        suffix += f"{COLORS['econ']}${RESET}"
+
+    cell_text = base + suffix
+
+    extra_visible = visible_len(cell_text) - width
+    if extra_visible > 0:
+        if suffix:
+            if i in state["econ"]:
+                cell_text = base + f"{COLORS['mov']}*{RESET}" if i in state["move"] else base
+            elif i in state["move"]:
+                cell_text = base
+    return pad_center_visible(cell_text, width)
+
+def render_board(state, boxes=BOXES, per_row=10, width=5):
+    cells = [format_cell(i, state, width) for i in range(1, boxes + 1)]
+    lines = ["".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
+    print("\n".join(lines))
+
+    
 # -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
 # -_-_-_-_-_-_-_-_-_-
@@ -192,7 +245,7 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
 if __name__ == "__main__":
     while True:
         while True:
-            mode = input("Seleccione el mode de juego: Simulacion (s) | Iterativo (i) --> ")
+            mode = input("Seleccione el mode de juego: Simulacion (s) | Iterativo (i) --> ").lower()
             if mode in ("s", "i"):
                 break
             print("El modo de juego no es correcto. Por favor ingrese un modo valido...")
@@ -219,26 +272,42 @@ if __name__ == "__main__":
             state = initial_state
             while not endgame(state):
                 for player in state["players"]:
+                    clear_console()
                     input(f"Turno de {player}. Presiona Enter para tirar el dado...")
                     throw = next(dice)
                     print(f"{player} sacó un {throw}")
                     old_pos = state["positions"][player]
                     new_pos = min(BOXES, old_pos + throw)
-                    bonus_jump = state["move"].get(new_pos, 0)
+                    old_econ = state["coins"][player]
+                    bonus_jump = state["move"].get(new_pos, 0) if state["move"].get(new_pos, 0) else 0
                     bonus_econ = state["econ"].get(new_pos, 0)
-                    print(f"Casilla: {new_pos}")
-                    if bonus_jump:
+                    if isinstance(bonus_jump, str):
+                        print(f"{player} VUELVE A 0")
+                    elif bonus_jump > 0:
                         print(f"Bonus de salto: {bonus_jump}")
-                    if bonus_econ:
+                    elif bonus_jump < 0:
+                        print(f"Penalización de salto: {bonus_jump} ")
+                    if bonus_econ > 0:
                         print(f"Bonus de monedas: {bonus_econ}")
+                    elif bonus_econ < 0:
+                        print(f"Penalización economía: {bonus_econ}")
+                    new_econ = compute_econ(old_econ, bonus_econ)
+                    new_pos_after_bonus = compute_next_jump(new_pos, bonus_jump)
+                    print(f"Movimiento: {old_pos} -> {new_pos_after_bonus} --- Monedas: {new_econ}")
                     state = pure_step(state, player, throw)
-                    print(f"Estado del tablero: {state}")
+                    render_board(state)
+                    #print(f"Estado del tablero: {state}")
                     if endgame(state):
+                        clear_console()
                         print("FIN DEL JUEGO")
                         break    
+                    print()
+                    input(f"Presione enter para continuar...")
         elif mode == "s": 
             for st in simul(initial_state, dice):
-                print(st)
+                render_board(st)
+                time.sleep(3)
+                clear_console()
                 if endgame(st):
                     print("FIN DEL JUEGO")
                     break
