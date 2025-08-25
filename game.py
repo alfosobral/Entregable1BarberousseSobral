@@ -50,7 +50,7 @@ START_COINS = 2
 COLORS = {
     "J1": Fore.RED,
     "J2": Fore.BLUE,
-    "mov": Fore.CYAN,
+    "mov": Fore.MAGENTA,
     "econ": Fore.YELLOW,
 }
 RESET = Style.RESET_ALL
@@ -123,12 +123,12 @@ def compute_econ(coins: int, bonus: int) -> int:
 @log_call
 def pure_step(state: State, player: str, throw: int) -> State:
     position = state["positions"][player]
-    new_position = min(BOXES, position + throw)
+    inerm_pos = min(BOXES, position + throw)
 
     # Aplicamos los bonus de salto
 
-    bonus_jump = state["move"].get(new_position, 0)
-    new_position = compute_next_jump(new_position, bonus_jump)
+    bonus_jump = state["move"].get(inerm_pos, 0)
+    new_position = min(BOXES, compute_next_jump(inerm_pos, bonus_jump))
 
     # Aplicamos los bonus de monedas (econ)
 
@@ -203,7 +203,7 @@ def format_cell(i: int, state, width: int = 5) -> str:
 
     suffix = ""
     if i in state["move"]:
-        suffix += f"{COLORS['mov']}*{RESET}"
+        suffix += f"{COLORS['mov']}>{RESET}"
     if i in state["econ"]:
         suffix += f"{COLORS['econ']}${RESET}"
 
@@ -282,13 +282,13 @@ if __name__ == "__main__":
                     bonus_jump = state["move"].get(new_pos, 0) if state["move"].get(new_pos, 0) else 0
                     bonus_econ = state["econ"].get(new_pos, 0)
                     if isinstance(bonus_jump, str):
-                        print(f"{player} VUELVE A 0")
+                        print(Fore.RED + f"{player} VUELVE A 0" + Style.RESET_ALL)
                     elif bonus_jump > 0:
-                        print(f"Bonus de salto: {bonus_jump}")
+                        print(f"Bonus de salto: +{bonus_jump}")
                     elif bonus_jump < 0:
-                        print(f"Penalización de salto: {bonus_jump} ")
+                        print(f"Penalización de salto: {bonus_jump}")
                     if bonus_econ > 0:
-                        print(f"Bonus de monedas: {bonus_econ}")
+                        print(f"Bonus de monedas: +{bonus_econ}")
                     elif bonus_econ < 0:
                         print(f"Penalización economía: {bonus_econ}")
                     new_econ = compute_econ(old_econ, bonus_econ)
@@ -298,8 +298,8 @@ if __name__ == "__main__":
                     render_board(state)
                     #print(f"Estado del tablero: {state}")
                     if endgame(state):
-                        clear_console()
                         print("FIN DEL JUEGO")
+                        input()
                         break    
                     print()
                     input(f"Presione enter para continuar...")
@@ -316,6 +316,3 @@ if __name__ == "__main__":
         if again == "n":
             print("Gracias por jugar!!!")
             break
-    
-
-        
