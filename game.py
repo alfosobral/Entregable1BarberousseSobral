@@ -245,7 +245,8 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
 if __name__ == "__main__":
     while True:
         while True:
-            mode = input("Seleccione el mode de juego: Simulacion (s) | Iterativo (i) --> ").lower()
+            clear_console()
+            mode = input("Seleccione el mode de juego: Simulacion (s) | Interactivo (i) --> ").lower()
             if mode in ("s", "i"):
                 break
             print("El modo de juego no es correcto. Por favor ingrese un modo valido...")
@@ -296,7 +297,6 @@ if __name__ == "__main__":
                     print(f"Movimiento: {old_pos} -> {new_pos_after_bonus} --- Monedas: {new_econ}")
                     state = pure_step(state, player, throw)
                     render_board(state)
-                    #print(f"Estado del tablero: {state}")
                     if endgame(state):
                         print("FIN DEL JUEGO")
                         input()
