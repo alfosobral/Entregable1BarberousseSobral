@@ -9,10 +9,8 @@ init(autoreset=True) # para que funcione en Windows/Linux
 # -_-_-_-_-_-_-_-_-_-
 
 def clear_console():
-    # Windows
     if os.name == "nt":
         os.system("cls")
-    # Linux / Mac
     else:
         os.system("clear")
 
@@ -32,11 +30,6 @@ def log_call(fn):
 # Variables globales y estructuras
 # -_-_-_-_-_-_-_-_-_-
 
-"""
-    Definimos variables globales (inmutables) como el tamanio del tablero y 
-    la cantidad de monedas iniciales.
-"""
-
 BOXES = 30
 START_COINS = 2
 COLORS = {
@@ -54,12 +47,6 @@ State = Dict[str, object]
 # Generadores
 # -_-_-_-_-_-_-_-_-_-
 
-""" 
-    Esta funcion se usa para generar tiradas infinitas del dado. Usa yield para
-    recordar su estado entre llamadas, y random para generar un numero aleatroio
-    entre 1 y 6.
-"""
-
 def generate_random_dice() -> Generator[int, None, None]:
     rand = random.Random()
     while (True):
@@ -69,11 +56,6 @@ def generate_random_dice() -> Generator[int, None, None]:
 # Inicializacion de la partida
 # -_-_-_-_-_-_-_-_-_-
 
-"""
-    Aqui debemos generar posiciones aleatorias dentro del tablero para los bonus
-    y las penalizaciones.
-"""
-
 def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
     rand = random.Random()
     boxes1 = list(range(1, BOXES))
@@ -81,7 +63,6 @@ def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
     rand.shuffle(boxes1)
     rand.shuffle(boxes2)
 
-    # Bonus de saltos
     jumps = {
         boxes1[0] : +2,
         boxes1[1] : +1,
@@ -90,7 +71,6 @@ def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
         boxes1[4] : -5
     }
 
-    # Bonus de monedas
     econ = {
         boxes2[0] : +2,
         boxes2[1] : +1,
@@ -119,52 +99,34 @@ def compute_econ(coins: int, bonus: int) -> int:
 def pure_step(state: State, player: str, throw: int) -> State:
     pos0   = state["positions"][player]
     coins0 = state["coins"][player]
-
     pos1 = min(BOXES, pos0 + throw)
-
     move = state["move"]
     econ = state["econ"]
-
-    def apply_chain(pos: int, coins: int, depth: int = 0, seen=None) -> tuple[int, int]:
-        
-        if seen is None:
-            seen = set()
-
+    def apply_chain(pos: int, coins: int, calls: int = 0, cache=None) -> tuple[int, int]:
+        if cache is None:
+            cache = set()
         be = econ.get(pos, 0)
         bm = move.get(pos, 0)
-
         coins2 = compute_econ(coins, be) if be != 0 else coins
-
         pos2 = compute_next_jump(pos, bm) if bm != 0 else pos
-        pos2 = min(BOXES, pos2)  # tope en la meta
-
+        pos2 = min(BOXES, pos2)
         if pos2 == pos and coins2 == coins:
             return pos, coins
-
         key = (pos2, coins2)
-        if key in seen or depth > 100:
+        if key in cache or calls > 100:
             return pos2, coins2
-        seen.add(key)
-
-        return apply_chain(pos2, coins2, depth + 1, seen)
-
+        cache.add(key)
+        return apply_chain(pos2, coins2, calls + 1, cache)
     final_pos, final_coins = apply_chain(pos1, coins0)
-
     return {
         **state,
         "positions": {**state["positions"], player: final_pos},
         "coins":     {**state["coins"],     player: final_coins},
     }
 
-
 # -_-_-_-_-_-_-_-_-_-
 # Endgame
 # -_-_-_-_-_-_-_-_-_-
-
-"""
-    Aqui chequeamos para cada jugador si llego al final, y si tiene monedas 
-    suficientes.
-"""
 
 def endgame(state: State) -> bool:
     players = state["players"]
