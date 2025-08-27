@@ -32,11 +32,6 @@ def log_call(fn):
 # Variables globales y estructuras
 # -_-_-_-_-_-_-_-_-_-
 
-"""
-    Definimos variables globales (inmutables) como el tamanio del tablero y 
-    la cantidad de monedas iniciales.
-"""
-
 BOXES = 30
 START_COINS = 2
 COLORS = {
@@ -54,12 +49,6 @@ State = Dict[str, object]
 # Generadores
 # -_-_-_-_-_-_-_-_-_-
 
-""" 
-    Esta funcion se usa para generar tiradas infinitas del dado. Usa yield para
-    recordar su estado entre llamadas, y random para generar un numero aleatroio
-    entre 1 y 6.
-"""
-
 def generate_random_dice() -> Generator[int, None, None]:
     rand = random.Random()
     while (True):
@@ -68,11 +57,6 @@ def generate_random_dice() -> Generator[int, None, None]:
 # -_-_-_-_-_-_-_-_-_-
 # Inicializacion de la partida
 # -_-_-_-_-_-_-_-_-_-
-
-"""
-    Aqui debemos generar posiciones aleatorias dentro del tablero para los bonus
-    y las penalizaciones.
-"""
 
 def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
     rand = random.Random()
@@ -143,11 +127,6 @@ def pure_step(state: State, player: str, throw: int) -> State:
 # Endgame
 # -_-_-_-_-_-_-_-_-_-
 
-"""
-    Aqui chequeamos para cada jugador si llego al final, y si tiene monedas 
-    suficientes.
-"""
-
 def endgame(state: State) -> bool:
     players = state["players"]
     positions = state["positions"]
@@ -186,7 +165,7 @@ def pad_center_visible(s: str, width: int) -> str:
     right = total_pad - left
     return ' ' * left + s + ' ' * right
 
-def format_cell(i: int, state, width: int = 5) -> str:
+def format_cell(i: int, state, width: int) -> str:
     base = f"{i:02}"
 
     players_here = [p for p, pos in state["positions"].items() if pos == i]
@@ -215,8 +194,8 @@ def format_cell(i: int, state, width: int = 5) -> str:
                 cell_text = base
     return pad_center_visible(cell_text, width)
 
-def render_board(state, boxes=BOXES, per_row=10, width=5):
-    cells = [format_cell(i, state, width) for i in range(1, boxes + 1)]
+def render_board(state, boxes=BOXES, per_row=6, width=5):
+    cells = list(map(lambda i: format_cell(i, state, width), range(1, boxes + 1)))
     lines = [" ".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
     print("\n".join(lines))
 
@@ -230,9 +209,39 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
     while not endgame(state):
         player = players[turn % 2]
         throw = next(dice)
+        yield state, player, throw
         state = pure_step(state, player, throw)
-        yield state
         turn += 1
+
+# -_-_-_-_-_-_-_-_-_-
+# Turno: describir, aplicar y mostrar
+# -_-_-_-_-_-_-_-_-_-
+
+@log_call
+def describe_and_apply_turn(state: State, player: str, throw: int) -> State:
+    print(f"Turno de {player}")
+    print(f"{player} sacó un {throw}")
+    old_pos = state["positions"][player]
+    old_coins = state["coins"][player]
+    inerm_pos = min(BOXES, old_pos + throw)
+    bonus_jump = state["move"].get(inerm_pos, 0) or 0
+    if isinstance(bonus_jump, str):
+        print(Fore.RED + f"{player} VUELVE A 0" + Style.RESET_ALL)
+    elif bonus_jump > 0:
+        print(f"Bonus de salto: +{bonus_jump}")
+    elif bonus_jump < 0:
+        print(f"Penalización de salto: {bonus_jump}")
+    final_pos = compute_next_jump(inerm_pos, bonus_jump)
+    bonus_econ = state["econ"].get(final_pos, 0)
+    if bonus_econ > 0:
+        print(f"Bonus de monedas: +{bonus_econ}")
+    elif bonus_econ < 0:
+        print(f"Penalización economía: {bonus_econ}")
+    final_coins = compute_econ(old_coins, bonus_econ)
+    print(f"Movimiento: {old_pos} -> {final_pos} --- Monedas: {final_coins}")
+    new_state = pure_step(state, player, throw)
+    render_board(new_state)
+    return new_state
 
 # -_-_-_-_-_-_-_-_-_-
 # Main
@@ -249,7 +258,11 @@ if __name__ == "__main__":
         jumps, econ = generate_special_boxes()
         if mode == "i":
             name1 = input("Nombre del jugador 1: ")
+            while name1 == "":
+                name1 = input("Nombre del jugador 1: ")
             name2 = input("Nombre de jugador 2: ")
+            while name2 == "" or name2 == name1:
+                name2 = input("Nombre de jugador 2: ")
             players = (name1, name2)
         elif mode == "s":
             players = ("Jugador1", "Jugador2")
@@ -267,48 +280,34 @@ if __name__ == "__main__":
         dice = generate_random_dice()
         if mode == "i":
             state = initial_state
-            while not endgame(state):
+            game_over = False
+            while not game_over:
                 for player in state["players"]:
                     clear_console()
                     input(f"Turno de {player}. Presiona Enter para tirar el dado...")
                     throw = next(dice)
-                    print(f"{player} sacó un {throw}")
-                    old_pos = state["positions"][player]
-                    new_pos = min(BOXES, old_pos + throw)
-                    old_econ = state["coins"][player]
-                    bonus_jump = state["move"].get(new_pos, 0) if state["move"].get(new_pos, 0) else 0
-                    bonus_econ = state["econ"].get(new_pos, 0)
-                    if isinstance(bonus_jump, str):
-                        print(Fore.RED + f"{player} VUELVE A 0" + Style.RESET_ALL)
-                    elif bonus_jump > 0:
-                        print(f"Bonus de salto: +{bonus_jump}")
-                    elif bonus_jump < 0:
-                        print(f"Penalización de salto: {bonus_jump}")
-                    if bonus_econ > 0:
-                        print(f"Bonus de monedas: +{bonus_econ}")
-                    elif bonus_econ < 0:
-                        print(f"Penalización economía: {bonus_econ}")
-                    new_econ = compute_econ(old_econ, bonus_econ)
-                    new_pos_after_bonus = compute_next_jump(new_pos, bonus_jump)
-                    print(f"Movimiento: {old_pos} -> {new_pos_after_bonus} --- Monedas: {new_econ}")
-                    state = pure_step(state, player, throw)
-                    render_board(state)
-                    if endgame(state):
+                    state = describe_and_apply_turn(state, player, throw)
+                    game_over = endgame(state)
+                    if game_over:
                         print("FIN DEL JUEGO")
                         input()
-                        break    
+                        break
                     print()
                     input(f"Presione enter para continuar...")
-        elif mode == "s": 
-            for st in simul(initial_state, dice):
-                render_board(st)
+
+        elif mode == "s":
+            for st_before, player, throw in simul(initial_state, dice):
+                state = describe_and_apply_turn(st_before, player, throw)
                 time.sleep(3)
                 clear_console()
-                if endgame(st):
+                if endgame(state):
                     print("FIN DEL JUEGO")
                     break
-        
+
         again = input("¿Quieres volver a jugar? (s/n): ")
+        while again != "s" and again != "n":
+            print("Debe ingresar una opción válida.")
+            again = input("¿Quieres volver a jugar? (s/n): ")
         if again == "n":
             print("Gracias por jugar!!!")
             break
