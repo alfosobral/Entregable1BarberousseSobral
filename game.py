@@ -1,11 +1,6 @@
 from typing import Dict, Tuple, Generator
-import functools
-import random
+import functools, os, re, time, datetime, random
 from colorama import Fore, Style, init
-import os
-from colorama import Fore, Style
-import re
-import time
 
 init(autoreset=True) # para que funcione en Windows/Linux
 
@@ -21,8 +16,9 @@ def clear_console():
     else:
         os.system("clear")
 
-def compose(*funcs):
-    return functools.reduce(lambda f, g: lambda x: f(g(x)), funcs)
+# -_-_-_-_-_-_-_-_-_-
+# Log
+# -_-_-_-_-_-_-_-_-_-    
 
 def log_call(fn):
     @functools.wraps(fn)
@@ -31,19 +27,15 @@ def log_call(fn):
         #print(f"[LOG] {fn.__name__}{args} -> {result}")
         return result
     return wrapper
-
-def color_text(text: str, color=None) -> str:
-    if color:
-        return f"{color}{text}{Style.RESET_ALL}"
-    else:
-        return text
-
+        
 # -_-_-_-_-_-_-_-_-_-
-# Modelo de datos
+# Variables globales y estructuras
 # -_-_-_-_-_-_-_-_-_-
 
-# Definimos variables globales (inmutables) como el tamanio del tablero y 
-# la cantidad de monedas iniciales.
+"""
+    Definimos variables globales (inmutables) como el tamanio del tablero y 
+    la cantidad de monedas iniciales.
+"""
 
 BOXES = 30
 START_COINS = 2
@@ -62,9 +54,11 @@ State = Dict[str, object]
 # Generadores
 # -_-_-_-_-_-_-_-_-_-
 
-# Esta funcion se usa para generar tiradas infinitas del dado. Usa yield para
-# recordar su estado entre llamadas, y random para generar un numero aleatroio
-# entre 1 y 6.
+""" 
+    Esta funcion se usa para generar tiradas infinitas del dado. Usa yield para
+    recordar su estado entre llamadas, y random para generar un numero aleatroio
+    entre 1 y 6.
+"""
 
 def generate_random_dice() -> Generator[int, None, None]:
     rand = random.Random()
@@ -75,34 +69,35 @@ def generate_random_dice() -> Generator[int, None, None]:
 # Inicializacion de la partida
 # -_-_-_-_-_-_-_-_-_-
 
-# Aqui debemos generar posiciones aleatorias dentro del tablero para los bonus
-# y las penalizaciones
+"""
+    Aqui debemos generar posiciones aleatorias dentro del tablero para los bonus
+    y las penalizaciones.
+"""
 
 def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
     rand = random.Random()
-    boxes = list(range(1, BOXES))
-    rand.shuffle(boxes)
+    boxes1 = list(range(1, BOXES))
+    boxes2 = list(range(1, BOXES))
+    rand.shuffle(boxes1)
+    rand.shuffle(boxes2)
 
     # Bonus de saltos
-
     jumps = {
-        boxes[0] : +2,
-        boxes[1] : +1,
-        boxes[2] : +3,
-        boxes[3] : "reset",
-        boxes[4] : -5
+        boxes1[0] : +2,
+        boxes1[1] : +1,
+        boxes1[2] : +3,
+        boxes1[3] : "reset",
+        boxes1[4] : -5
     }
 
     # Bonus de monedas
-
     econ = {
-        boxes[5] : +2,
-        boxes[6] : +1,
-        boxes[7] : +1,
-        boxes[8] : -1,
-        boxes[9] : -1
+        boxes2[0] : +2,
+        boxes2[1] : +1,
+        boxes2[2] : +1,
+        boxes2[3] : -1,
+        boxes2[4] : -1
      }
-    
     return jumps, econ
 
 # -_-_-_-_-_-_-_-_-_-
@@ -148,8 +143,10 @@ def pure_step(state: State, player: str, throw: int) -> State:
 # Endgame
 # -_-_-_-_-_-_-_-_-_-
 
-# Aqui chequeamos para cada jugador si llego al final, y si tiene monedas 
-# suficientes
+"""
+    Aqui chequeamos para cada jugador si llego al final, y si tiene monedas 
+    suficientes.
+"""
 
 def endgame(state: State) -> bool:
     players = state["players"]
@@ -220,10 +217,9 @@ def format_cell(i: int, state, width: int = 5) -> str:
 
 def render_board(state, boxes=BOXES, per_row=10, width=5):
     cells = [format_cell(i, state, width) for i in range(1, boxes + 1)]
-    lines = ["".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
+    lines = [" ".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
     print("\n".join(lines))
 
-    
 # -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
 # -_-_-_-_-_-_-_-_-_-
