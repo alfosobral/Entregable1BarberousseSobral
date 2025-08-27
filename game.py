@@ -9,10 +9,8 @@ init(autoreset=True) # para que funcione en Windows/Linux
 # -_-_-_-_-_-_-_-_-_-
 
 def clear_console():
-    # Windows
     if os.name == "nt":
         os.system("cls")
-    # Linux / Mac
     else:
         os.system("clear")
 
@@ -65,7 +63,6 @@ def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
     rand.shuffle(boxes1)
     rand.shuffle(boxes2)
 
-    # Bonus de saltos
     jumps = {
         boxes1[0] : +2,
         boxes1[1] : +1,
@@ -74,7 +71,6 @@ def generate_special_boxes() -> Tuple[Dict[int, object], Dict[int, int]]:
         boxes1[4] : -5
     }
 
-    # Bonus de monedas
     econ = {
         boxes2[0] : +2,
         boxes2[1] : +1,
@@ -101,26 +97,31 @@ def compute_econ(coins: int, bonus: int) -> int:
 
 @log_call
 def pure_step(state: State, player: str, throw: int) -> State:
-    position = state["positions"][player]
-    inerm_pos = min(BOXES, position + throw)
-
-    # Aplicamos los bonus de salto
-
-    bonus_jump = state["move"].get(inerm_pos, 0)
-    new_position = min(BOXES, compute_next_jump(inerm_pos, bonus_jump))
-
-    # Aplicamos los bonus de monedas (econ)
-
-    coins = state["coins"][player]
-    bonus_econ = state["econ"].get(new_position, 0)
-    new_coins = compute_econ(coins, bonus_econ)
-
-    # Ahora devolvemos un nuevo estado (inmutabilidad)
-
+    pos0   = state["positions"][player]
+    coins0 = state["coins"][player]
+    pos1 = min(BOXES, pos0 + throw)
+    move = state["move"]
+    econ = state["econ"]
+    def apply_chain(pos: int, coins: int, calls: int = 0, cache=None) -> tuple[int, int]:
+        if cache is None:
+            cache = set()
+        be = econ.get(pos, 0)
+        bm = move.get(pos, 0)
+        coins2 = compute_econ(coins, be) if be != 0 else coins
+        pos2 = compute_next_jump(pos, bm) if bm != 0 else pos
+        pos2 = min(BOXES, pos2)
+        if pos2 == pos and coins2 == coins:
+            return pos, coins
+        key = (pos2, coins2)
+        if key in cache or calls > 100:
+            return pos2, coins2
+        cache.add(key)
+        return apply_chain(pos2, coins2, calls + 1, cache)
+    final_pos, final_coins = apply_chain(pos1, coins0)
     return {
         **state,
-        "positions": {**state["positions"], player: new_position},
-        "coins" : {**state["coins"], player: new_coins} 
+        "positions": {**state["positions"], player: final_pos},
+        "coins":     {**state["coins"],     player: final_coins},
     }
 
 # -_-_-_-_-_-_-_-_-_-
@@ -194,8 +195,8 @@ def format_cell(i: int, state, width: int) -> str:
                 cell_text = base
     return pad_center_visible(cell_text, width)
 
-def render_board(state, boxes=BOXES, per_row=6, width=5):
-    cells = list(map(lambda i: format_cell(i, state, width), range(1, boxes + 1)))
+def render_board(state, boxes=BOXES, per_row=10, width=5):
+    cells = [format_cell(i, state, width) for i in range(1, boxes + 1)]
     lines = [" ".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
     print("\n".join(lines))
 
