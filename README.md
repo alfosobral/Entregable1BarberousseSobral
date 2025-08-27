@@ -62,9 +62,13 @@ Para garantizar aleatoriedad, primero desordenan dos copias de las posiciones de
 
 - _def pure_step(state: State, player: str, throw: int) -> State_
 
-Esta función define cómo evoluciona el estado del juego tras un turno. Llamamos _chain_ (cadena) a un evento poco usual en el juego, en el que un jugador tiene una muy buena racha de suerte y le aplican varias bonificaciones de corrido. Para esto, el codigo se encarga de calcular de forma recusriva todas las bonificaciones de la tirada aplicando una funcion recursiva. Primero, calcula el "paso cero" utilizando la posicion inicial del jugador y el valor de la tirada del dado. En base a esto, chequea las eventuales bonificaciones en cada "casilla intermedia" llamando a la funcion recursiva _apply_chain_. Esta funcion continua calculando bonificaciones hasta que el jugador cae en una casilla vacia o el juego termina.
+Esta función define cómo evoluciona el estado del juego tras un turno. Llamamos _chain_ (cadena) a un evento poco usual en el juego, en el que un jugador tiene una muy buena racha de suerte y le aplican varias bonificaciones de corrido. Para esto, el codigo se encarga de calcular de forma recusriva todas las bonificaciones de la tirada aplicando una funcion. Primero, calcula el "paso cero" utilizando la posicion inicial del jugador y el valor de la tirada del dado, y en base a esto, chequea las eventuales bonificaciones en cada "casilla intermedia" llamando a la funcion recursiva _apply_chain_. 
 
 El nombre pure_step resalta que es una función pura: no tiene efectos secundarios y siempre devuelve el mismo resultado dados los mismos parámetros.
+
+_def apply_chain(pos: int, coins: int, calls: int = 0, cache=None) -> tuple[int, int]:_
+
+Esta funcion continua calculando bonificaciones hasta que el jugador cae en una casilla vacia o el juego termina. Ademas, utilizamos un "tope" para evitar que se llegue a un stack overflow por un bucle infinito (por ejemplo, que un jugador quede rebotando entre un +2 y un -2 de salto). Devuelve una tupla con la posicion y las monedas finales del jugador.
 
 - _def endgame(state: State) -> bool:  Aqui chequeamos para cada jugador si llego al final, y si tiene monedas suficientes_
 
