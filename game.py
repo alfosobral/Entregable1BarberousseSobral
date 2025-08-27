@@ -117,27 +117,45 @@ def compute_econ(coins: int, bonus: int) -> int:
 
 @log_call
 def pure_step(state: State, player: str, throw: int) -> State:
-    position = state["positions"][player]
-    inerm_pos = min(BOXES, position + throw)
+    pos0   = state["positions"][player]
+    coins0 = state["coins"][player]
 
-    # Aplicamos los bonus de salto
+    pos1 = min(BOXES, pos0 + throw)
 
-    bonus_jump = state["move"].get(inerm_pos, 0)
-    new_position = min(BOXES, compute_next_jump(inerm_pos, bonus_jump))
+    move = state["move"]
+    econ = state["econ"]
 
-    # Aplicamos los bonus de monedas (econ)
+    def apply_chain(pos: int, coins: int, depth: int = 0, seen=None) -> tuple[int, int]:
+        
+        if seen is None:
+            seen = set()
 
-    coins = state["coins"][player]
-    bonus_econ = state["econ"].get(new_position, 0)
-    new_coins = compute_econ(coins, bonus_econ)
+        be = econ.get(pos, 0)
+        bm = move.get(pos, 0)
 
-    # Ahora devolvemos un nuevo estado (inmutabilidad)
+        coins2 = compute_econ(coins, be) if be != 0 else coins
+
+        pos2 = compute_next_jump(pos, bm) if bm != 0 else pos
+        pos2 = min(BOXES, pos2)  # tope en la meta
+
+        if pos2 == pos and coins2 == coins:
+            return pos, coins
+
+        key = (pos2, coins2)
+        if key in seen or depth > 100:
+            return pos2, coins2
+        seen.add(key)
+
+        return apply_chain(pos2, coins2, depth + 1, seen)
+
+    final_pos, final_coins = apply_chain(pos1, coins0)
 
     return {
         **state,
-        "positions": {**state["positions"], player: new_position},
-        "coins" : {**state["coins"], player: new_coins} 
+        "positions": {**state["positions"], player: final_pos},
+        "coins":     {**state["coins"],     player: final_coins},
     }
+
 
 # -_-_-_-_-_-_-_-_-_-
 # Endgame
@@ -215,7 +233,7 @@ def format_cell(i: int, state, width: int = 5) -> str:
                 cell_text = base
     return pad_center_visible(cell_text, width)
 
-def render_board(state, boxes=BOXES, per_row=10, width=5):
+def render_board(state, boxes=BOXES, per_row=6, width=5):
     cells = [format_cell(i, state, width) for i in range(1, boxes + 1)]
     lines = [" ".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
     print("\n".join(lines))
