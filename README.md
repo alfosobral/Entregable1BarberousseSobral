@@ -14,14 +14,14 @@ En cada turno también se muestra el tablero actualizado con la posición de los
 
 __State__
 
-Para representar el estado del juego decidimos utilizar una variable única llamada state, que encapsula toda la información necesaria para el desarrollo de la partida. Este enfoque permite trabajar de manera más clara y ordenada, ya que el estado no se modifica directamente, sino que en cada paso se genera un nuevo estado a partir del anterior.
+Para representar el estado del juego decidimos utilizar un diccionario _state_, que encapsula toda la información necesaria para el desarrollo de la partida. Este enfoque permite trabajar de manera más clara y ordenada, ya que el estado no se modifica directamente, sino que en cada paso se genera un nuevo estado a partir del anterior (inmutabilidad).
 
 El state es un diccionario (Dict[str, object]) con la siguiente estructura:
 - "players": tupla con los nombres de los dos jugadores. Ejemplo: ("Ana", "Pepe").
 - "positions": diccionario que indica la casilla actual de cada jugador. Ejemplo: {"Ana": 5, "Pepe": 3}.
 - "coins": diccionario con la cantidad de monedas de cada jugador. Ejemplo: {"Ana": 2, "Pepe": 1}.
-- "move": diccionario que asigna a ciertas casillas un bonus o penalización de movimiento. Ejemplo: {7: +2, 12: "reset"}.
-- "econ": diccionario que asigna a ciertas casillas un bonus o penalización de monedas. Ejemplo: {8: +1, 15: -1}.
+- "move": diccionario que asigna a ciertas casillas del tablero un bonus o penalización de movimiento. Ejemplo: {7: +2, 12: "reset"}.
+- "econ": diccionario que asigna a ciertas casillas del tablero un bonus o penalización de monedas. Ejemplo: {8: +1, 15: -1}.
 
 De esta manera, todo el flujo del juego puede modelarse a partir de este estado central, aplicando funciones puras que lo transforman paso a paso.
 
@@ -35,16 +35,15 @@ Se conforma por 4 funciones:
 - def pad_center_visible(s: str, width: int) -> str: Centra un string en un espacio de ancho fijo, considerando solo los caracteres visibles (sin contar los códigos de color). Basicamente chequea cuanto ocupa el string que se debe imprimir en terminal, calcula la diferencia entre el espacio isponible y lo que ocupa para manejar dicho espacio libre  así que quede todo alineado.
   
 - def format_cell(i: int, state, width: int = 5) -> str: Construye el texto que representa una celda del tablero:
-  #### Falta terminar
-  - Muestra el número de casilla (ej: 01, 02, ...).
-  - Si hay un jugador en esa casilla, muestra su inicial y la colorea.
+  - Muestra el número de casilla (ej: 01, 02, ...). Decidimos utilizar dos digitos para que cada numero de casilla ocupe el mismo ancho y quede visualmente mas estetico.
+  - Si hay un jugador en esa casilla, muestra su inicial y la colorea. El jugador 1 aparece en rojo y el jugador 2 en azul.
   - Si la casilla tiene bonus/penalización de salto, agrega un símbolo > magenta.
   - Si la casilla tiene bonus/penalización de monedas, agrega un símbolo $ amarillo.
-  - Si hay ambos bonus .... NO se que hace porque creo que no esta commiteado jaja
+  - Si hay ambos bonus se agregan ambos a la casilla con la misma logica.
 
-- def render_board(state, boxes=BOXES, per_row=10, width=5): Dibuja el tablero completo en la terminal:
+- def render_board(state, boxes=BOXES, per_row=6, width=5): Dibuja el tablero completo en la terminal:
   - Llama a format_cell para cada casilla del tablero.
-  - Agrupa las casillas en filas de 10 (por defecto).
+  - Agrupa las casillas en filas de 6 (por defecto). Este parametro puede cambiarse dentro del codigo. 
   - Imprime cada fila.
 
 ### Algunas funciones
@@ -59,15 +58,11 @@ Su función es crear casillas especiales en el tablero. Devuelve dos diccionario
     - jumps: contiene casillas que generan efectos de movimiento (avanzar, retroceder o reiniciar a 0).
     - econ: contiene casillas que otorgan o quitan monedas.
   
-Para garantizar aleatoriedad, primero desordena las posiciones del tablero con random.shuffle, y luego asigna allí los bonus y penalizaciones. De esta forma, cada partida tiene una distribución distinta de casillas especiales.
+Para garantizar aleatoriedad, primero desordenan dos copias de las posiciones del tablero con random.shuffle, y luego asigna allí los bonus y penalizaciones. De esta forma, cada partida tiene una distribución distinta de casillas especiales, y permite que dos bonificaciones de distinto tipo aparezcane en la misma celda.
 
 - _def pure_step(state: State, player: str, throw: int) -> State_
 
-Esta función define cómo evoluciona el estado del juego tras un turno.
-  - Calcula la posición intermedia sumando el dado a la posición actual.
-  - Aplica bonus o penalizaciones de movimiento (move).
-  - Aplica bonus o penalizaciones de monedas (econ).
-  - Devuelve un nuevo estado inmutable, es decir, una copia del diccionario state con los valores actualizados.
+Esta función define cómo evoluciona el estado del juego tras un turno. Llamamos _chain_ (cadena) a un evento poco usual en el juego, en el que un jugador tiene una muy buena racha de suerte y le aplican varias bonificaciones de corrido. Para esto, el codigo se encarga de calcular de forma recusriva todas las bonificaciones de la tirada aplicando una funcion recursiva. Primero, calcula el "paso cero" utilizando la posicion inicial del jugador y el valor de la tirada del dado. En base a esto, chequea las eventuales bonificaciones en cada "casilla intermedia" llamando a la funcion recursiva _apply_chain_. Esta funcion continua calculando bonificaciones hasta que el jugador cae en una casilla vacia o el juego termina.
 
 El nombre pure_step resalta que es una función pura: no tiene efectos secundarios y siempre devuelve el mismo resultado dados los mismos parámetros.
 
@@ -76,9 +71,9 @@ El nombre pure_step resalta que es una función pura: no tiene efectos secundari
 Se utiliza para detectar si la partida terminó. 
 - Revisa si algún jugador llegó o superó la casilla final (BOXES) con al menos una moneda.
 - Si ambos jugadores llegan al final, gana el que conserve más monedas (o se declara empate si tienen la misma cantidad).
-- También contempla el caso en que un jugador se quede sin monedas, otorgando la victoria automática al otro.
+- También contempla el caso en que un jugador se quede sin monedas en el medio de la partida, otorgando la victoria automática al otro.
 
-Devuelve True si la partida terminó, o False en caso contrario.
+Es una funcion booleana (devuelve True si la partida terminó, o False en caso contrario).
 
 - _def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, None, None]_
 
