@@ -10,9 +10,9 @@ Modo interactivo (i): Antes de comenzar se solicitan los nombres de los jugadore
 Cada tirada de dado se realiza presionando Enter, y el programa informa el valor obtenido junto con los posibles bonus o penalizaciones en monedas y movimiento.
 En cada turno también se muestra el tablero actualizado con la posición de los jugadores. La partida finaliza cuando alguno alcanza la casilla 30 o se queda sin monedas.
 
-### Decisiones tomadas para implementar el juego
+### Decisiones de diseño y estructura
 
-__State__
+__Estado del juego(state)__
 
 Para representar el estado del juego decidimos utilizar un diccionario _state_, que encapsula toda la información necesaria para el desarrollo de la partida. Este enfoque permite trabajar de manera más clara y ordenada, ya que el estado no se modifica directamente, sino que en cada paso se genera un nuevo estado a partir del anterior (inmutabilidad).
 
@@ -25,14 +25,24 @@ El state es un diccionario (Dict[str, object]) con la siguiente estructura:
 
 De esta manera, todo el flujo del juego puede modelarse a partir de este estado central, aplicando funciones puras que lo transforman paso a paso.
 
-__Tablero visual__
+__Tablero en consola__
 
 A la hora de realizar el tablero por consola hicimos uso de IA para poder llegar al resultado que queríamos pero siempre aprendiendo de lo que nos devuelve, por lo tanto decidimos dejarle una sección de este documento para describir lo que hace luego de haberla comprendido.
+
+- Colores: Jugador1 en rojo, Jugador2 en azul; > magenta (movimiento), $ amarillo (economía).
+- Celdas: números con dos dígitos para alinear (01, 02, …).
+- Encabezado de turno: TURNO N — Jugador, para separar claramente la salida.
+- Funciones clave:
+  - visible_len y pad_center_visible: centran texto ignorando códigos ANSI.
+  - format_cell: compone la celda (jugador, > y/o $).
+  - render_board(state, boxes=BOXES, per_row=10, width=5): dibuja el tablero por filas (por defecto 10).
+
+Limitación conocida (visual): si ambos jugadores caen en la misma casilla, se muestra sólo la inicial del primero. Es un compromiso estético de ancho fijo; se podría mejorar mostrando dos iniciales comprimidas (ej. [L|P]) si se quisiera.
 
 Se conforma por 4 funciones:
 - def visible_len(s: str) -> int: Calcula la longitud visible de un string, eliminando los códigos de color ANSI (que no ocupan espacio real en la terminal). Esto es para alinear bien en consola, pues no importan los códigos de color.
   
-- def pad_center_visible(s: str, width: int) -> str: Centra un string en un espacio de ancho fijo, considerando solo los caracteres visibles (sin contar los códigos de color). Basicamente chequea cuanto ocupa el string que se debe imprimir en terminal, calcula la diferencia entre el espacio isponible y lo que ocupa para manejar dicho espacio libre  así que quede todo alineado.
+- def pad_center_visible(s: str, width: int) -> str: Centra un string en un espacio de ancho fijo, considerando solo los caracteres visibles (sin contar los códigos de color). Basicamente chequea cuanto ocupa el string que se debe imprimir en terminal, calcula la diferencia entre el espacio disponible y lo que ocupa para manejar dicho espacio libre  así que quede todo alineado.
   
 - def format_cell(i: int, state, width: int = 5) -> str: Construye el texto que representa una celda del tablero:
   - Muestra el número de casilla (ej: 01, 02, ...). Decidimos utilizar dos digitos para que cada numero de casilla ocupe el mismo ancho y quede visualmente mas estetico.
@@ -41,9 +51,9 @@ Se conforma por 4 funciones:
   - Si la casilla tiene bonus/penalización de monedas, agrega un símbolo $ amarillo.
   - Si hay ambos bonus se agregan ambos a la casilla con la misma logica.
 
-- def render_board(state, boxes=BOXES, per_row=6, width=5): Dibuja el tablero completo en la terminal:
+- def render_board(state, boxes=BOXES, per_row=10, width=5): Dibuja el tablero completo en la terminal:
   - Llama a format_cell para cada casilla del tablero.
-  - Agrupa las casillas en filas de 6 (por defecto). Este parametro puede cambiarse dentro del codigo. 
+  - Agrupa las casillas en filas de 10 (por defecto). Este parametro puede cambiarse dentro del codigo. 
   - Imprime cada fila.
 
 ### Algunas funciones
@@ -62,7 +72,7 @@ Para garantizar aleatoriedad, primero desordenan dos copias de las posiciones de
 
 - _def pure_step(state: State, player: str, throw: int) -> State_
 
-Esta función define cómo evoluciona el estado del juego tras un turno. Llamamos _chain_ (cadena) a un evento poco usual en el juego, en el que un jugador tiene una muy buena racha de suerte y le aplican varias bonificaciones de corrido. Para esto, el codigo se encarga de calcular de forma recusriva todas las bonificaciones de la tirada aplicando una funcion. Primero, calcula el "paso cero" utilizando la posicion inicial del jugador y el valor de la tirada del dado, y en base a esto, chequea las eventuales bonificaciones en cada "casilla intermedia" llamando a la funcion recursiva _apply_chain_. 
+Esta función define cómo evoluciona el estado del juego tras un turno. Llamamos _chain_ (cadena) a un evento poco usual en el juego, en el que un jugador tiene una muy buena racha de suerte y le aplican varias bonificaciones de corrido. Para esto, el codigo se encarga de calcular de forma recursiva todas las bonificaciones de la tirada aplicando una funcion. Primero, calcula el "paso cero" utilizando la posicion inicial del jugador y el valor de la tirada del dado, y en base a esto, chequea las eventuales bonificaciones en cada "casilla intermedia" llamando a la funcion recursiva _apply_chain_. 
 
 El nombre pure_step resalta que es una función pura: no tiene efectos secundarios y siempre devuelve el mismo resultado dados los mismos parámetros.
 
@@ -89,6 +99,43 @@ Implementa el modo simulador del juego.
 
 Esto permite recorrer la partida como una secuencia de estados, ideal para animaciones o ejecuciones automáticas.
 
-### Conclusiones de lo aprendido en el proyecto 
-- (Analice muy brevemente en qué casos fue posible y en qué casos no, mantener la inmutabilidad)
+### Implementación en "Python Funcional"
+- Funciones puras
+  -  compute_next_jump(position, bonus)
+  -  compute_econ(coins, bonus)
+  -  pure_step(state, player, throw) → retorna nuevo state.
 
+- Inmutabilidad
+  - No se muta state; se devuelve una copia con dict-unpacking ({**state, ...}).
+  - compute_econ asegura coins ≥ 0 con max(0, …).
+  
+- Recursión
+  - apply_chain (anidada en pure_step) encadena premios/penas hasta alcanzar un estado estable o detectar ciclo.
+  - Detención garantizada: si no hay salto, corta; además, tope defensivo calls > 100 y cacheo de pares (pos, coins) para evitar bucles.
+    
+- Generadores
+  - generate_random_dice() (flujo infinito de tiradas 1..6).
+  - simul(...) (flujo de estados previos al avance de cada turno).
+    
+- Compresiones / map / filrter / reduce
+  - render_board usa map para celdas.
+  - En cada turno se listan jugadores con monedas con filter; el total de monedas usa reduce.
+    
+- Composición de funciones
+  - En apply_chain se combinan compute_econ y compute_next_jump, y pure_step compone todo el flujo.
+    
+- Decoradores de log
+  - @log_call en las funciones puras, con LOG_ENABLED para activar/desactivar.
+  - Muestra nombre de función, jugador/dado (si aplica) y un resumen (posición/monedas) sin spamear el estado completo.
+
+### Conclusiones de lo aprendido en el proyecto 
+- Dónde sí:
+  - pure_step no muta el estado; retorna nuevos diccionarios con las actualizaciones.
+  - Funciones puras (compute_*) son deterministas y fáciles de testear.
+  - El flujo de turnos (simul) y el dado (generate_random_dice) separan la generación del consumo de valores (composición).
+
+- Dónde no / límites prácticos:
+  - La E/S (prints, input) es inherentemente impura. La aislamos en funciones de orquestación (describe_and_apply_turn y main) para mantener el “núcleo” de lógica como puro.
+  - El azar también es impuro; lo encapsulamos en generadores/constructores para poderlo “inyectar” (e incluso fijar con semilla).
+
+En síntesis, logramos mantener el corazón del juego (reglas, transiciones de estado) en un estilo funcional (puro e inmutable por paso), relegando efectos a los bordes del programa.
