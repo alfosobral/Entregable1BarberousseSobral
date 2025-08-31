@@ -15,41 +15,6 @@ def clear_console():
         os.system("clear")
 
 # -_-_-_-_-_-_-_-_-_-
-# Log
-# -_-_-_-_-_-_-_-_-_-    
-
-LOG_ENABLED = True
-
-def log_call(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        result = fn(*args, **kwargs)
-        if LOG_ENABLED:
-            arg_str = ""
-            if len(args) >= 2 and isinstance(args[1], str):
-                arg_str = f"jugador={args[1]}"
-            if len(args) >= 3 and isinstance(args[2], int):
-                arg_str += f", dado={args[2]}"
-            if isinstance(result, dict):
-                res_str = ""
-                if "positions" in result and "coins" in result and arg_str:
-                    jugador = args[1]
-                    res_str = f"pos={result['positions'][jugador]}, monedas={result['coins'][jugador]}"
-                else:
-                    res_str = "{...}"
-            else:
-                res_str = repr(result)
-            #print(f"[LOG] {fn.__name__}({arg_str}) -> {res_str}")
-        return result
-    return wrapper
-
-def print_turn_header(player: str, turn_no: int):
-    title = f"TURNO {turn_no} — {player}"
-    bar = "═" * len(title)
-    # Encabezado con una línea en blanco antes y después
-    print(f"\n{bar}\n{title}\n{bar}\n")
-
-# -_-_-_-_-_-_-_-_-_-
 # Variables globales y estructuras
 # -_-_-_-_-_-_-_-_-_-
 
@@ -258,6 +223,41 @@ def render_board(state, boxes=BOXES, per_row=10, width=5):
     print("\n".join(lines))
 
 # -_-_-_-_-_-_-_-_-_-
+# Log
+# -_-_-_-_-_-_-_-_-_-    
+
+LOG_ENABLED = True
+
+def log_call(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        if LOG_ENABLED:
+            arg_str = ""
+            if len(args) >= 2 and isinstance(args[1], str):
+                arg_str = f"jugador={args[1]}"
+            if len(args) >= 3 and isinstance(args[2], int):
+                arg_str += f", dado={args[2]}"
+            if isinstance(result, dict):
+                res_str = ""
+                if "positions" in result and "coins" in result and arg_str:
+                    jugador = args[1]
+                    res_str = f"pos={result['positions'][jugador]}, monedas={result['coins'][jugador]}"
+                else:
+                    res_str = "{...}"
+            else:
+                res_str = repr(result)
+            #print(f"[LOG] {fn.__name__}({arg_str}) -> {res_str}")
+        return result
+    return wrapper
+
+def print_turn_header(player: str, turn_no: int):
+    title = f"TURNO {turn_no} — {player}"
+    bar = "═" * len(title)
+    # Encabezado con una línea en blanco antes y después
+    print(f"\n{bar}\n{title}\n{bar}\n")
+
+# -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
 # -_-_-_-_-_-_-_-_-_-
 
@@ -278,7 +278,7 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
 if __name__ == "__main__":
     while True:
         while True: 
-            #clear_console()
+            clear_console()
             mode = input("Seleccione el mode de juego: Simulacion (s) | Interactivo (i) --> ").lower()
             print("\n")
             if mode in ("s", "i"):
