@@ -105,21 +105,21 @@ def pure_step(state: State, player: str, throw: int) -> State:
     def apply_chain(pos: int, coins: int, calls: int = 0, cache=None) -> tuple[int, int]:
         if cache is None:
             cache = set()
-        be = econ.get(pos, 0)
-        bm = move.get(pos, 0)
-        coins2 = compute_econ(coins, be) if be != 0 else coins
-        pos2 = compute_next_jump(pos, bm) if bm != 0 else pos
-        pos2 = min(BOXES, pos2)
+        bonus_econ = econ.get(pos, 0)
+        bonus_jump = move.get(pos, 0)
+        coins2 = compute_econ(coins, bonus_econ) if bonus_econ != 0 else coins
+        pos2 = min(BOXES, compute_next_jump(pos, bonus_jump) if bonus_jump != 0 else pos)
+        if bonus_jump == 0:
+            return pos, coins2
         if pos2 == pos and coins2 == coins:
             return pos, coins
         key = (pos2, coins2)
         if key in cache or calls > 100:
+            cache.add(key)
             return pos2, coins2
-        cache.add(key)
         return apply_chain(pos2, coins2, calls + 1, cache)
     final_pos, final_coins = apply_chain(pos1, coins0)
-    return {
-        **state,
+    return {**state,
         "positions": {**state["positions"], player: final_pos},
         "coins":     {**state["coins"],     player: final_coins},
     }
@@ -149,6 +149,37 @@ def endgame(state: State) -> bool:
             print(f"Ganó {players[1] if p == players[0] else players[0]} porque {p} se quedó sin monedas")
             return True
     return False
+
+# -_-_-_-_-_-_-_-_-_-
+# Turno: describir, aplicar y mostrar
+# -_-_-_-_-_-_-_-_-_-
+
+@log_call
+def describe_and_apply_turn(state: State, player: str, throw: int) -> State:
+    print(f"Turno de {player}")
+    print(f"{player} sacó un {throw}")
+    old_pos = state["positions"][player]
+    old_coins = state["coins"][player]
+    inerm_pos = min(BOXES, old_pos + throw)
+    bonus_jump = state["move"].get(inerm_pos, 0) or 0
+    if isinstance(bonus_jump, str):
+        print(Fore.RED + f"{player} VUELVE A 0" + Style.RESET_ALL)
+    elif bonus_jump > 0:
+        print(f"Bonus de salto: +{bonus_jump}")
+    elif bonus_jump < 0:
+        print(f"Penalización de salto: {bonus_jump}")
+    final_pos = compute_next_jump(inerm_pos, bonus_jump)
+    bonus_econ = state["econ"].get(final_pos, 0)
+    if bonus_econ > 0:
+        print(f"Bonus de monedas: +{bonus_econ}")
+    elif bonus_econ < 0:
+        print(f"Penalización economía: {bonus_econ}")
+    final_coins = compute_econ(old_coins, bonus_econ)
+    print(f"Movimiento: {old_pos} -> {final_pos} --- Monedas: {final_coins}")
+    new_state = pure_step(state, player, throw)
+    render_board(new_state)
+    return new_state
+
 
 # -_-_-_-_-_-_-_-_-_-
 # Tablero visual
@@ -215,36 +246,6 @@ def simul(state: State, dice: Generator[int, None, None]) -> Generator[State, No
         turn += 1
 
 # -_-_-_-_-_-_-_-_-_-
-# Turno: describir, aplicar y mostrar
-# -_-_-_-_-_-_-_-_-_-
-
-@log_call
-def describe_and_apply_turn(state: State, player: str, throw: int) -> State:
-    print(f"Turno de {player}")
-    print(f"{player} sacó un {throw}")
-    old_pos = state["positions"][player]
-    old_coins = state["coins"][player]
-    inerm_pos = min(BOXES, old_pos + throw)
-    bonus_jump = state["move"].get(inerm_pos, 0) or 0
-    if isinstance(bonus_jump, str):
-        print(Fore.RED + f"{player} VUELVE A 0" + Style.RESET_ALL)
-    elif bonus_jump > 0:
-        print(f"Bonus de salto: +{bonus_jump}")
-    elif bonus_jump < 0:
-        print(f"Penalización de salto: {bonus_jump}")
-    final_pos = compute_next_jump(inerm_pos, bonus_jump)
-    bonus_econ = state["econ"].get(final_pos, 0)
-    if bonus_econ > 0:
-        print(f"Bonus de monedas: +{bonus_econ}")
-    elif bonus_econ < 0:
-        print(f"Penalización economía: {bonus_econ}")
-    final_coins = compute_econ(old_coins, bonus_econ)
-    print(f"Movimiento: {old_pos} -> {final_pos} --- Monedas: {final_coins}")
-    new_state = pure_step(state, player, throw)
-    render_board(new_state)
-    return new_state
-
-# -_-_-_-_-_-_-_-_-_-
 # Main
 # -_-_-_-_-_-_-_-_-_-
 
@@ -288,8 +289,8 @@ if __name__ == "__main__":
                     input(f"Turno de {player}. Presiona Enter para tirar el dado...")
                     throw = next(dice)
                     state = describe_and_apply_turn(state, player, throw)
-                    game_over = endgame(state)
-                    if game_over:
+                    if endgame(state):
+                        print()
                         print("FIN DEL JUEGO")
                         input()
                         break
