@@ -80,7 +80,9 @@ _def apply_chain(pos: int, coins: int, calls: int = 0, cache=None) -> tuple[int,
 
 Esta funcion continua calculando bonificaciones hasta que el jugador cae en una casilla vacia o el juego termina. Ademas, utilizamos un "tope" para evitar que se llegue a un stack overflow por un bucle infinito (por ejemplo, que un jugador quede rebotando entre un +2 y un -2 de salto). Devuelve una tupla con la posicion y las monedas finales del jugador.
 
-- _def endgame(state: State) -> bool:  Aqui chequeamos para cada jugador si llego al final, y si tiene monedas suficientes_
+- _def endgame(state: State) -> bool:_
+
+Aqui chequeamos para cada jugador si llego al final, y si tiene monedas suficientes.
 
 Se utiliza para detectar si la partida terminó. 
 - Revisa si algún jugador llegó o superó la casilla final (BOXES) con al menos una moneda.
