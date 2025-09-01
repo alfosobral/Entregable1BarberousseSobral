@@ -1,6 +1,7 @@
 from typing import Dict, Tuple, Generator
-import functools, os, re, time, datetime, random
+import functools, os, re, time, random
 from colorama import Fore, Style, init
+from datetime import datetime
 
 init(autoreset=True) # para que funcione en Windows/Linux
 
@@ -13,6 +14,48 @@ def clear_console():
         os.system("cls")
     else:
         os.system("clear")
+
+# -_-_-_-_-_-_-_-_-_-
+# Log
+# -_-_-_-_-_-_-_-_-_-    
+
+LOG_ENABLED = True
+
+def log_call(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        if LOG_ENABLED:
+            arg_str = ""
+            if len(args) >= 2 and isinstance(args[1], str):
+                arg_str = f"jugador={args[1]}"
+            if len(args) >= 3 and isinstance(args[2], int):
+                arg_str += f", dado={args[2]}"
+            if isinstance(result, dict):
+                res_str = ""
+                if "positions" in result and "coins" in result and arg_str:
+                    jugador = args[1]
+                    res_str = f"pos={result['positions'][jugador]}, monedas={result['coins'][jugador]}"
+                else:
+                    res_str = "{...}"
+            else:
+                res_str = repr(result)
+            #print(f"[LOG] {fn.__name__}({arg_str}) -> {res_str}")
+        return result
+    return wrapper
+
+def print_turn_header(player: str, turn_no: int):
+    title = f"TURNO {turn_no} — {player}"
+    bar = "═" * len(title)
+    # Encabezado con una línea en blanco antes y después
+    print(f"\n{bar}\n{title}\n{bar}\n")
+
+
+def create_log(players):
+    date = datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_name = "vs".join(players)
+    log = f"{log_name}_{date}.txt"
+    return open(log, "w", encoding="utf-8")
 
 # -_-_-_-_-_-_-_-_-_-
 # Variables globales y estructuras
@@ -142,9 +185,16 @@ def endgame(state: State) -> bool:
 # Turno: describir, aplicar y mostrar
 # -_-_-_-_-_-_-_-_-_-
 
-def describe_and_apply_turn(state: State, player: str, throw: int) -> State:
-    print(f"Turno de {player}")
-    print(f"{player} sacó un {throw}")
+def describe_and_apply_turn(state: State, player: str, throw: int, log_file) -> State:
+    ms1 = f"Turno de {player}"
+    print(ms1)
+    log_file.write(ms1 + "\n")
+    log_file.flush()
+    
+    ms2 = f"{player} sacó un {throw}"
+    print(ms2)
+    log_file.write(ms2 + "\n")
+    log_file.flush()
 
     old_pos   = state["positions"][player]
     old_coins = state["coins"][player]
@@ -157,18 +207,32 @@ def describe_and_apply_turn(state: State, player: str, throw: int) -> State:
 
     expected = min(BOXES, old_pos + throw)
     if new_pos != expected:
-        print("Hubo premio/castigo de movimiento aplicado")
+        ms3 = "Hubo premio/castigo de movimiento aplicado"
+        print(ms3)
+        log_file.write(ms3 + "\n")
+        log_file.flush()
 
     delta_coins = new_coins - old_coins
     if   delta_coins > 0: print(f"Ganó monedas: +{delta_coins}")
     elif delta_coins < 0: print(f"Perdió monedas: {delta_coins}")
 
     if new_coins != old_coins:
-        print(f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins} -> {new_coins}")
+        ms4 = f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins} -> {new_coins}"
+        print(ms4)
+        log_file.write(ms4 + "\n")
+        log_file.flush()
     else:
-        print(f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins}")
+        ms4 = f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins}"
+        print(ms4)
+        log_file.write(ms4 + "\n")
+        log_file.flush()
 
-    render_board(new_state)
+    board = render_board(new_state)
+    print(board)
+    log_file.write("\n")
+    log_file.write("\n")
+    log_file.flush()
+
     return new_state
 
 
@@ -220,42 +284,7 @@ def format_cell(i: int, state, width: int) -> str:
 def render_board(state, boxes=BOXES, per_row=10, width=5):
     cells = list(map(lambda i: format_cell(i, state, width), range(1, boxes + 1)))
     lines = [" ".join(cells[r:r+per_row]) for r in range(0, boxes, per_row)]
-    print("\n".join(lines))
-
-# -_-_-_-_-_-_-_-_-_-
-# Log
-# -_-_-_-_-_-_-_-_-_-    
-
-LOG_ENABLED = True
-
-def log_call(fn):
-    @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
-        result = fn(*args, **kwargs)
-        if LOG_ENABLED:
-            arg_str = ""
-            if len(args) >= 2 and isinstance(args[1], str):
-                arg_str = f"jugador={args[1]}"
-            if len(args) >= 3 and isinstance(args[2], int):
-                arg_str += f", dado={args[2]}"
-            if isinstance(result, dict):
-                res_str = ""
-                if "positions" in result and "coins" in result and arg_str:
-                    jugador = args[1]
-                    res_str = f"pos={result['positions'][jugador]}, monedas={result['coins'][jugador]}"
-                else:
-                    res_str = "{...}"
-            else:
-                res_str = repr(result)
-            #print(f"[LOG] {fn.__name__}({arg_str}) -> {res_str}")
-        return result
-    return wrapper
-
-def print_turn_header(player: str, turn_no: int):
-    title = f"TURNO {turn_no} — {player}"
-    bar = "═" * len(title)
-    # Encabezado con una línea en blanco antes y después
-    print(f"\n{bar}\n{title}\n{bar}\n")
+    return "\n".join(lines)
 
 # -_-_-_-_-_-_-_-_-_-
 # Simulador (generador automatico de estados)
@@ -293,6 +322,7 @@ if __name__ == "__main__":
             while name2 == "" or name2 == name1:
                 name2 = input("Nombre de jugador 2: ")
             players = (name1, name2)
+            log_file = create_log(players)
         elif mode == "s":
             players = ("Jugador1", "Jugador2")
         else: 
@@ -319,10 +349,13 @@ if __name__ == "__main__":
                     input(f"Turno de {player}. Presiona Enter para tirar el dado...")
                     print("\n")
                     throw = next(dice)
-                    state = describe_and_apply_turn(state, player, throw)
+                    state = describe_and_apply_turn(state, player, throw, log_file)
                     if endgame(state):
+                        final_ms = "FIN DEL JUEGO"
+                        log_file.write(final_ms)
+                        log_file.flush()
                         print()
-                        print("FIN DEL JUEGO")
+                        print(final_ms)
                         input()
                         game_over = True
                         break
