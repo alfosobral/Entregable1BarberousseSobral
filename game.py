@@ -188,13 +188,15 @@ def endgame(state: State) -> bool:
 def describe_and_apply_turn(state: State, player: str, throw: int, log_file) -> State:
     ms1 = f"Turno de {player}"
     print(ms1)
-    log_file.write(ms1 + "\n")
-    log_file.flush()
+    if log_file:
+        log_file.write(ms1 + "\n")
+        log_file.flush()
     
     ms2 = f"{player} sacó un {throw}"
     print(ms2)
-    log_file.write(ms2 + "\n")
-    log_file.flush()
+    if log_file:
+        log_file.write(ms2 + "\n")
+        log_file.flush()
 
     old_pos   = state["positions"][player]
     old_coins = state["coins"][player]
@@ -209,8 +211,9 @@ def describe_and_apply_turn(state: State, player: str, throw: int, log_file) -> 
     if new_pos != expected:
         ms3 = "Hubo premio/castigo de movimiento aplicado"
         print(ms3)
-        log_file.write(ms3 + "\n")
-        log_file.flush()
+        if log_file:
+            log_file.write(ms3 + "\n")
+            log_file.flush()
 
     delta_coins = new_coins - old_coins
     if   delta_coins > 0: print(f"Ganó monedas: +{delta_coins}")
@@ -219,19 +222,22 @@ def describe_and_apply_turn(state: State, player: str, throw: int, log_file) -> 
     if new_coins != old_coins:
         ms4 = f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins} -> {new_coins}"
         print(ms4)
-        log_file.write(ms4 + "\n")
-        log_file.flush()
+        if log_file:
+            log_file.write(ms4 + "\n")
+            log_file.flush()
     else:
         ms4 = f"Movimiento: {old_pos} -> {new_pos} --- Monedas: {old_coins}"
         print(ms4)
-        log_file.write(ms4 + "\n")
-        log_file.flush()
+        if log_file:
+            log_file.write(ms4 + "\n")
+            log_file.flush()
 
     board = render_board(new_state)
     print(board)
-    log_file.write("\n")
-    log_file.write("\n")
-    log_file.flush()
+    if log_file:
+        log_file.write("\n")
+        log_file.write("\n")
+        log_file.flush()
 
     return new_state
 
@@ -370,11 +376,13 @@ if __name__ == "__main__":
                     input(f"Presione enter para continuar...")
 
         elif mode == "s":
+            players = ("Jugador1", "Jugador2")
+            log_file = create_log(players)
             turn_no = 1
             for st_before, player, throw in simul(initial_state, dice):
                 print_turn_header(player, turn_no) 
                 turn_no += 1
-                state = describe_and_apply_turn(st_before, player, throw)
+                state = describe_and_apply_turn(st_before, player, throw, log_file)
                 print("\n")
                 # Mostrar jugadores con monedas usando filter
                 jugadores_con_monedas = list(filter(lambda p: state["coins"][p] > 0, state["players"]))
@@ -383,11 +391,16 @@ if __name__ == "__main__":
                 from functools import reduce
                 total_monedas = reduce(lambda acc, p: acc + state["coins"][p], state["players"], 0)
                 print("Total de monedas en juego:", total_monedas)
+                log_file.flush()
                 time.sleep(3)
                 #clear_console()
                 if endgame(state):
+                    final_ms = "FIN DEL JUEGO"
+                    log_file.write(final_ms)
+                    log_file.flush()
                     print("FIN DEL JUEGO")
                     break
+            log_file.close()
 
         again = input("¿Quieres volver a jugar? (s/n): ")
         while again != "s" and again != "n":
