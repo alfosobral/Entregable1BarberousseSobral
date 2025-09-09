@@ -3,7 +3,7 @@ import functools, os, re, time, random
 from colorama import Fore, Style, init
 from datetime import datetime
 
-init(autoreset=True) # para que funcione en Windows/Linux
+init(autoreset=True) 
 
 # -_-_-_-_-_-_-_-_-_-
 # Funciones auxiliares

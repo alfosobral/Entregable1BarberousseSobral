@@ -1,0 +1,77 @@
+Turno de Jugador1
+Jugador1 sacó un 2
+Movimiento: 0 -> 2 --- Monedas: 2
+
+
+Turno de Jugador2
+Jugador2 sacó un 2
+Movimiento: 0 -> 2 --- Monedas: 2
+
+
+Turno de Jugador1
+Jugador1 sacó un 1
+Movimiento: 2 -> 3 --- Monedas: 2
+
+
+Turno de Jugador2
+Jugador2 sacó un 5
+Movimiento: 2 -> 7 --- Monedas: 2 -> 4
+
+
+Turno de Jugador1
+Jugador1 sacó un 6
+Movimiento: 3 -> 9 --- Monedas: 2
+
+
+Turno de Jugador2
+Jugador2 sacó un 5
+Hubo premio/castigo de movimiento aplicado
+Movimiento: 7 -> 0 --- Monedas: 4
+
+
+Turno de Jugador1
+Jugador1 sacó un 6
+Movimiento: 9 -> 15 --- Monedas: 2
+
+
+Turno de Jugador2
+Jugador2 sacó un 1
+Movimiento: 0 -> 1 --- Monedas: 4
+
+
+Turno de Jugador1
+Jugador1 sacó un 3
+Movimiento: 15 -> 18 --- Monedas: 2 -> 3
+
+
+Turno de Jugador2
+Jugador2 sacó un 2
+Movimiento: 1 -> 3 --- Monedas: 4
+
+
+Turno de Jugador1
+Jugador1 sacó un 5
+Movimiento: 18 -> 23 --- Monedas: 3
+
+
+Turno de Jugador2
+Jugador2 sacó un 2
+Movimiento: 3 -> 5 --- Monedas: 4 -> 5
+
+
+Turno de Jugador1
+Jugador1 sacó un 3
+Movimiento: 23 -> 26 --- Monedas: 3
+
+
+Turno de Jugador2
+Jugador2 sacó un 5
+Movimiento: 5 -> 10 --- Monedas: 5
+
+
+Turno de Jugador1
+Jugador1 sacó un 5
+Movimiento: 26 -> 30 --- Monedas: 3
+
+
+FIN DEL JUEGO
