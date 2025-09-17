@@ -7,6 +7,7 @@ public class PlayerThread implements Runnable {
 
     @Override
     public void run() {
-        ;
+        int diceResult = player.throwDice();
+
     }
 }

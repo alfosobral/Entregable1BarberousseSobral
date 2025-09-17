@@ -6,5 +6,5 @@ public interface PlayerInterface {
     int updateLife(int delta);
     int getCoins();
     void addCoins(int delta);
-
+    int throwDice();
 }
