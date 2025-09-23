@@ -1,51 +1,24 @@
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Cell {
-	private boolean healing;
-    private boolean poison;
-	private int coins;
-	private AtomicBoolean locked;
+	private final int row, col;
+	private final ReentrantLock lock = new ReentrantLock();
+	private Booster content = Booster.NONE;
 
-	public Cell() {
-		this.healing = false;
-        this.poison = false;
-		this.coins = 0;
-		this.locked = new AtomicBoolean(false);
+	public Cell(int row, int col) {
+		this.row = row;
+		this.col = col;
 	}
 
-	public boolean isHealed() {
-		return healing;
+	public int row() { return row; }
+	public int col() {return col; }
+    public ReentrantLock lock() { return lock; }
+
+	public Booster getContentUnsafe() {
+		return content;
 	}
 
-    public boolean isPoisoned(){
-        return poison;
-    }
-
-	public int getCoins() {
-		return coins;
-	}
-
-	public boolean isLocked() {
-		return locked.get();
-	}
-
-	public void setHealing(boolean healing) {
-		this.healing = healing;
-	}
-
-	public void setPoisoned(boolean poison) {
-		this.poison = poison;
-	}
-
-	public void setCoins(int coins) {
-		this.coins = coins;
-	}
-
-	public void lock() {
-		this.locked.set(true);
-	}
-
-	public void unlock() {
-		this.locked.set(false);
+	public void setContentUnsafe(Booster content) {
+		this.content = content;
 	}
 }
