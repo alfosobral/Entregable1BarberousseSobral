@@ -1,5 +1,3 @@
-import java.util.Random;
-
 public class Robot implements Runnable {
     private final Board board;
     private final Booster type;

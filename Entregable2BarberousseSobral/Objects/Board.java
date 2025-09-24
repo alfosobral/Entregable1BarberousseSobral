@@ -30,7 +30,7 @@ public class Board {
         return r>=0 && r<rows && c>=0 && c<cols; 
     }
 
-    private int id(int r, int c) { 
+    public int id(int r, int c) { 
         return r * cols + c; 
     }
 
