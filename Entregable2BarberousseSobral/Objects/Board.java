@@ -26,9 +26,24 @@ public class Board {
         return total;
     }
 
+    public boolean inRange(int r, int c) { 
+        return r>=0 && r<rows && c>=0 && c<cols; 
+    }
+
     private int id(int r, int c) { 
         return r * cols + c; 
     }
+
+    public Pos getPosFromId(int id) {
+    if (id < 0 || id >= total) {
+        throw new IllegalArgumentException(
+            "id fuera de rango: " + id + " (válido: 0.." + (total - 1) + ")"
+        );
+    }
+    int r = id / cols;
+    int c = id % cols;
+    return new Pos(r, c);
+}
 
     public Cell getCell(int x, int y) {
         return grid[x][y];

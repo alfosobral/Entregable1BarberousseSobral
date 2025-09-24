@@ -1,0 +1,1 @@
+public record Pos(int r, int c) {}
