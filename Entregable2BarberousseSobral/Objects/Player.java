@@ -3,6 +3,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.List;
 import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class Player implements Runnable {
     private final String name;
@@ -12,6 +13,8 @@ public class Player implements Runnable {
     private final AtomicInteger coins = new AtomicInteger();
     private final long Tmin, Tmax;
     private volatile int r, c;
+
+    private final Deque<Pos> currentPath = new ArrayDeque<>();
 
     private final PathPlanner planner;
 
@@ -41,8 +44,8 @@ public class Player implements Runnable {
 
                 move();
 
-                while(running && !Thread.currentThread().isInterrupted() && !path.isEmpty()) {
-                    Pos next = path.pollFirst();
+                while(running && !Thread.currentThread().isInterrupted() && !currentPath.isEmpty()) {
+                    Pos next = currentPath.pollFirst();
                     if (next == null) break;
 
                     if (!board.inRange(next.r(), next.c())) continue;
@@ -68,7 +71,7 @@ public class Player implements Runnable {
     }
 
     protected void move() {
-        int dice = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 7); // 1..6
+        int dice = java.util.concurrent.ThreadLocalRandom.current().nextInt(1, 7);
         List<Pos> path = (planner != null) ? planner.plan(r, c, board, dice) : java.util.List.of();
 
         if (path == null || path.size() != dice) {
@@ -84,8 +87,8 @@ public class Player implements Runnable {
             cleanPath.add(p);
         }
 
-        rutaPendiente.clear();       // 🔁 reemplaza la ruta del turno anterior
-        rutaPendiente.addAll(limpia);
+        currentPath.clear();
+        currentPath.addAll(cleanPath);
     }
 
     private void applyBoost(Booster b) {
