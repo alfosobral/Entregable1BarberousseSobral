@@ -1,50 +1,16 @@
-import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import Entregable2BarberousseSobral.Interfaces.PlayerInterface;
-
-public class Player implements PlayerInterface {
+public class Player implements Runnable {
     private final String name;
-    private int lifes;
-    private int coins;
-    private Random dice;
+    private final Board tablero;
 
-    public Player(String name) {
-        this.name = name;
-        this.lifes = 2;
-        this.coins = 0;
-        this.dice = new Random();
-    }
+    private final AtomicInteger lifes = new AtomicInteger();
+    private final AtomicInteger monedas = new AtomicInteger();
+    private volatile int r, c;
 
-    @Override
-    public String getName() {
-        return name;
-    }
+    private final PathPlanner planner;
 
-    @Override
-    public int getLifes() {
-        return lifes;
-    }
+    private final Consumer<Player> onDeath;
 
-    @Override
-    public int updateLife(int delta) {
-        if (lifes > 0) {
-            lifes += delta;
-        }
-        return lifes;
-    }
-
-    @Override
-    public int getCoins() {
-        return coins;
-    }
-
-    @Override
-    public void addCoins(int delta) {
-        coins += delta;
-    }
-
-    @Override
-    public int throwDice() {
-        return dice.nextInt(1, 7);
-    }
+    private volatile boolean 
 }

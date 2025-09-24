@@ -22,6 +22,10 @@ public class Board {
         }
     }
 
+    public int getTotal() {
+        return total;
+    }
+
     private int id(int r, int c) { 
         return r * cols + c; 
     }
