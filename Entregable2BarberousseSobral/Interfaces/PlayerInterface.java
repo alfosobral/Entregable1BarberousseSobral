@@ -1,4 +1,4 @@
-package Entregable2BarberousseSobral.Interfaces;
+package Interfaces;
 
 public interface PlayerInterface {
     String getName();
