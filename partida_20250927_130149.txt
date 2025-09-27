@@ -1,0 +1,11 @@
+=== LOG DE PARTIDA ===
+Fecha y hora: 2025-09-27T13:01:49.071986700
+Tamaño del tablero: 10x10
+Número de jugadores: 4
+Tiempo de partida: 3 segundos
+
+--- RESULTADOS FINALES ---
+🥇 1º lugar: Player-1 | Vidas: 3 | Monedas: 0 | Puntuación total: 3
+🥈 2º lugar: Player-2 | Vidas: 3 | Monedas: 0 | Puntuación total: 3
+🥉 3º lugar: Player-3 | Vidas: 3 | Monedas: 0 | Puntuación total: 3
+🏅 4º lugar: Player-4 | Vidas: 3 | Monedas: 0 | Puntuación total: 3
