@@ -1,6 +1,8 @@
+package Objects;
+
 import java.util.*;
 
-public class PathPlanner implements PathPlannerInterface {
+public class PathPlanner {
     
     private static final int[][] DIRECTIONS = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
     
@@ -8,13 +10,13 @@ public class PathPlanner implements PathPlannerInterface {
      * Implementación del método de la interfaz PathPlannerInterface
      * Retorna una lista de posiciones en lugar de IDs
      */
-    @Override
-    public List<Pos> plan(int r, int c, Board tablero, int dice) {
-        int[] pathIds = planBestPath(r, c, tablero, dice);
+
+    public List<Pos> plan(int r, int c, Board board, int dice) {
+        int[] pathIds = planBestPath(r, c, board, dice);
         List<Pos> positions = new ArrayList<>();
         
         for (int id : pathIds) {
-            positions.add(tablero.getPosFromId(id));
+            positions.add(board.getPosFromId(id));
         }
         
         return positions;

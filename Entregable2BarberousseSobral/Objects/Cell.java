@@ -1,9 +1,12 @@
+package Objects;
+
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Cell {
 	private final int row, col;
 	private final ReentrantLock lock = new ReentrantLock();
-	private Booster content = Booster.NONE;
+	private volatile Booster content = Booster.NONE;
+	private volatile Player player = null;
 
 	public Cell(int row, int col) {
 		this.row = row;
@@ -20,5 +23,13 @@ public class Cell {
 
 	public void setContentUnsafe(Booster content) {
 		this.content = content;
+	}
+
+	public boolean hasPlayer() {
+		return !(this.player == null);
+	}
+
+	public void setPlayer(Player player) {
+		this.player = player;
 	}
 }

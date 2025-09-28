@@ -1,3 +1,5 @@
+package Objects;
+
 public enum Booster {
     COIN,
     HEAL,

@@ -1,3 +1,5 @@
+package Objects;
+
 import java.util.concurrent.atomic.LongAdder;
 
 public class Board {
@@ -26,6 +28,14 @@ public class Board {
         return total;
     }
 
+    public int getRows() {
+        return rows;
+    }
+
+    public int getCols() {
+        return cols;
+    }
+
     public boolean inRange(int r, int c) { 
         return r>=0 && r<rows && c>=0 && c<cols; 
     }
@@ -35,15 +45,15 @@ public class Board {
     }
 
     public Pos getPosFromId(int id) {
-    if (id < 0 || id >= total) {
-        throw new IllegalArgumentException(
-            "id fuera de rango: " + id + " (válido: 0.." + (total - 1) + ")"
-        );
+        if (id < 0 || id >= total) {
+            throw new IllegalArgumentException(
+                "id fuera de rango: " + id + " (válido: 0.." + (total - 1) + ")"
+            );
+        }
+        int r = id / cols;
+        int c = id % cols;
+        return new Pos(r, c);
     }
-    int r = id / cols;
-    int c = id % cols;
-    return new Pos(r, c);
-}
 
     public Cell getCell(int x, int y) {
         return grid[x][y];
@@ -91,7 +101,7 @@ public class Board {
     }
    }
 
-   public Booster movePlayerSafe(int r1, int c1, int r2, int c2) {
+   public Booster movePlayerSafe(int r1, int c1, int r2, int c2, Player player) {
     Cell a = grid[r1][c1], b = grid[r2][c2];
     Cell first = (id(a.row(),a.col()) <= id(b.row(),b.col())) ? a : b;
     Cell second = (first == a) ? b : a;
@@ -104,6 +114,8 @@ public class Board {
         if (consumed != Booster.NONE) {
             b.setContentUnsafe(Booster.NONE);
             dec(consumed);
+            b.setPlayer(player);
+            a.setPlayer(null);
         }
         return consumed;
     } finally {

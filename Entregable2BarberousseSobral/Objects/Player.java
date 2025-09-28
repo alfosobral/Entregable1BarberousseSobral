@@ -1,3 +1,5 @@
+package Objects;
+
 import java.util.function.Consumer;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +34,8 @@ public class Player implements Runnable {
         this.c = ic;
         this.planner = p;
         this.onDeath = onDeath;
+
+        board.getCell(ic, il).setPlayer(this);
     }
 
     @Override
@@ -50,7 +54,8 @@ public class Player implements Runnable {
 
                     if (!board.inRange(next.r(), next.c())) continue;
 
-                    Booster b = board.movePlayerSafe(r, c, next.r(), next.c()); 
+                    Booster b = board.movePlayerSafe(r, c, next.r(), next.c(), this); 
+
                     r = next.r();
                     c = next.c();
 
