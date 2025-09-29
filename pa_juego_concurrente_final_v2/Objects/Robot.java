@@ -28,13 +28,11 @@ public class Robot implements Runnable {
                     placed = board.tryPlaceTrap();
                 }
 
-                // If target already reached for this type, we just exit
                 if (!placed) {
-                    // Check if we hit target and cannot place more
                     Thread.sleep(200);
                     boolean done = switch (type) {
-                        case COIN -> false; // may still be under target later if others pick coins (but requirement asks to place set once; keep simple: once full, we stop)
-                        case HEAL -> true;  // stop when target reached or no space right now
+                        case COIN -> false;
+                        case HEAL -> true;
                         case POISON -> true;
                         default -> true;
                     };

@@ -5,9 +5,8 @@ import java.util.*;
 public class PathPlanner {
     private static final int[][] DIRS = { {-1,0},{0,1},{1,0},{0,-1} };
 
-    // Simple greedy: BFS up to dice steps, prefer cells with content value and unoccupied
+    // greedy
     public List<Pos> plan(int r, int c, Board board, int steps) {
-        // Validar coordenadas de entrada
         if (r < 0 || r >= board.rows() || c < 0 || c >= board.cols()) {
             return Collections.emptyList();
         }
@@ -32,13 +31,10 @@ public class PathPlanner {
                 int nr = cur.r + d[0], nc = cur.c + d[1];
                 if (nr<0 || nr>=board.rows() || nc<0 || nc>=board.cols()) continue;
                 if (vis[nr][nc][cur.d+1]) continue;
-                // Avoid paths that step into occupied cells (can't move into them)
                 if (board.isOccupied(nr,nc)) continue;
                 
-                // Los venenos son invisibles para el pathfinding - no los considera
                 var cont = board.cellContent(nr,nc);
                 if (cont == Booster.POISON) {
-                    // Tratar las casillas de veneno como casillas normales (sin penalización ni bonus)
                     cont = Booster.NONE;
                 }
                 
@@ -46,27 +42,22 @@ public class PathPlanner {
                 if (cont == Booster.COIN) add += Math.min(10, Math.max(1, board.cellCoinAmount(nr,nc)));
                 else if (cont == Booster.HEAL) add += 3;
                 
-                // Sistema de dispersión para evitar clustering
                 int playerCount = countPlayersInArea(board, nr, nc, 2);
                 
-                // Penalizar áreas con muchos jugadores
                 if (playerCount > 1) {
-                    add -= playerCount * 6; // Penalización más fuerte por clustering
+                    add -= playerCount * 6;
                 } else if (playerCount == 0) {
-                    add += 12; // Mayor bonus por área libre
+                    add += 12;
                 }
                 
-                // Bonus muy reducido por exploración para evitar dominancia
                 int explorationBonus = (Math.abs(nr - r) + Math.abs(nc - c)) / 3;
                 add += explorationBonus;
                 
-                // Mayor factor aleatorio para más variabilidad
                 add += (int)(Math.random() * 12);
                 
-                // Penalización moderada por distancia extrema
                 int distance = Math.abs(nr - r) + Math.abs(nc - c);
                 if (distance > 4) {
-                    add -= distance / 2; // Penalización más suave
+                    add -= distance / 2;
                 }
 
                 List<Pos> npath = new ArrayList<>(cur.path);
@@ -81,7 +72,6 @@ public class PathPlanner {
         return best.path;
     }
     
-    // Método para contar jugadores en un área específica
     private int countPlayersInArea(Board board, int centerRow, int centerCol, int radius) {
         int count = 0;
         for (int dr = -radius; dr <= radius; dr++) {

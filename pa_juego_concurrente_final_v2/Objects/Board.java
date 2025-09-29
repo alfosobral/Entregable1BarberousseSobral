@@ -11,9 +11,9 @@ public class Board {
     private final AtomicInteger healItems = new AtomicInteger(0);
     private final AtomicInteger traps = new AtomicInteger(0);
 
-    private volatile int targetCoinCells; // max to place ONCE (10% default)
-    private volatile int targetTraps;     // max to place ONCE (10% default)
-    private volatile int targetHeals;     // exact number to place ONCE (from input)
+    private volatile int targetCoinCells;
+    private volatile int targetTraps;
+    private volatile int targetHeals;
 
     public Board(int rows, int cols) {
         this.rows = rows;
@@ -114,36 +114,29 @@ public class Board {
     public Booster movePlayerSafe(int r, int c, int nr, int nc, Player p) {
         if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return Booster.NONE;
         
-        // Si es el mismo lugar, no hacer nada
         if (r == nr && c == nc) return Booster.NONE;
         
         Cell from = grid[r][c];
         Cell to = grid[nr][nc];
 
-        // Ordenar los locks para evitar deadlock
         Cell first = from.row() * cols + from.col() <= to.row() * cols + to.col() ? from : to;
         Cell second = first == from ? to : from;
 
         first.lock().lock();
         second.lock().lock();
         try {
-            // Verificar que la celda destino esté libre
             if (to.hasPlayer()) return Booster.NONE;
             
-            // Verificar que el jugador esté realmente en la posición de origen
             if (from.player() != p) return Booster.NONE;
             
-            // Limpiar la posición anterior PRIMERO
             from.clearPlayer();
             
-            // Colocar en la nueva posición
             to.setPlayer(p);
             p.setPos(nr, nc);
 
             Booster b = to.content();
             int coinAmount = to.coinAmount();
             if (b != Booster.NONE) {
-                // On pickup, the item disappears permanently (no replenishment)
                 to.clearContent();
                 if (b == Booster.COIN) coinCells.decrementAndGet();
                 else if (b == Booster.HEAL) healItems.decrementAndGet();
@@ -196,7 +189,6 @@ public class Board {
         }
     }
     
-    // Método para limpiar todas las posiciones de un jugador específico
     public void clearAllPlayerPositions(Player p) {
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
@@ -221,7 +213,6 @@ public class Board {
         return grid[r][c].coinAmount();
     }
 
-    // Build a snapshot for printing
     public String[][] snapshotWithColors() {
         String[][] s = new String[rows][cols];
         for (int i=0;i<rows;i++) {
@@ -254,7 +245,6 @@ public class Board {
         return s;
     }
     
-    // Mantener el método original para compatibilidad
     public char[][] snapshot() {
         char[][] s = new char[rows][cols];
         for (int i=0;i<rows;i++) {
@@ -274,7 +264,6 @@ public class Board {
                         Booster b = cell.content();
                         if (b == Booster.HEAL) s[i][j] = '+';
                         else if (b == Booster.COIN) s[i][j] = '$';
-                        // Los venenos no se muestran
                     }
                 } finally {
                     cell.lock().unlock();

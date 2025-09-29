@@ -6,7 +6,7 @@ public class Cell {
     private final int row, col;
     private final ReentrantLock lock = new ReentrantLock();
     private volatile Booster content = Booster.NONE;
-    private volatile int coinAmount = 0; // only meaningful if content == COIN
+    private volatile int coinAmount = 0;
     private volatile Player player = null;
 
     public Cell(int row, int col) {

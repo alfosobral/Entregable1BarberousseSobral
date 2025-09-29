@@ -1,5 +1,0 @@
-==== RESULTADOS DE LA PARTIDA ====
-1) A  | monedas=20 | vidas=1
-2) L  | monedas=5 | vidas=2
-3) M  | monedas=72 | vidas=0
-4) C  | monedas=7 | vidas=0

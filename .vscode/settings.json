@@ -1,6 +1,7 @@
 {
     "java.project.sourcePaths": [
-        "Entregable2BarberousseSobral"
+        "Entregable2BarberousseSobral",
+        "pa_juego_concurrente_final_v2"
     ],
     "java.project.referencedLibraries": [],
     "java.debug.settings.onBuildFailureProceed": true

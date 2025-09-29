@@ -1,0 +1,4 @@
+==== RESULTADOS DE LA PARTIDA ====
+1) Cas  | monedas=67 | vidas=6
+2) Lu  | monedas=63 | vidas=4
+3) Al  | monedas=46 | vidas=0

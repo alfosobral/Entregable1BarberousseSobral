@@ -16,7 +16,7 @@ public class Player implements Runnable {
     private volatile int lives;
     private volatile int coins;
 
-    private final int idDigit; // 1..9 to render on board
+    private final int idDigit;
 
     public Player(String name, int idDigit, Board board, int initialLives, long zmin, long zmax) {
         this.name = name;
@@ -34,7 +34,6 @@ public class Player implements Runnable {
     public int row() { return r; }
     public int col() { return c; }
     
-    // Obtener iniciales del nombre (máximo 2 caracteres)
     public String getInitials() {
         String[] words = name.trim().split("\\s+");
         if (words.length >= 2) {
@@ -46,7 +45,6 @@ public class Player implements Runnable {
         }
     }
     
-    // Obtener color ANSI basado en el ID del jugador
     public String getColorCode() {
         String[] colors = {
             "\u001B[31m", // Rojo
@@ -82,21 +80,20 @@ public class Player implements Runnable {
 
                     if (b == Booster.HEAL) {
                         addLife();
-                        System.out.printf("❤️ %s recogió una vida (vidas=%d) %n", name, lives);
+                        System.out.printf("+++ %s recogió una vida (vidas=%d) %n", name, lives);
                     } else if (b == Booster.POISON) {
                         loseLife();
-                        System.out.printf("☠️ %s pisó una trampa (vidas=%d) %n", name, lives);
+                        System.out.printf("--- %s pisó una trampa (vidas=%d) %n", name, lives);
                         if (lives <= 0) break;
                     } else if (b == Booster.COIN) {
-                        System.out.printf("🪙 %s juntó monedas (total=%d) %n", name, coins);
+                        System.out.printf("$$$ %s juntó monedas (total=%d) %n", name, coins);
                     }
 
-                    Thread.sleep(40); // Reducido de 60 a 40ms para más fluidez
+                    Thread.sleep(40);
                 }
 
                 if (lives <= 0) break;
 
-                // Tiempo de espera normal para balance
                 long nap = ThreadLocalRandom.current().nextLong(zmin, zmax + 1);
                 Thread.sleep(nap);
             }
@@ -106,20 +103,17 @@ public class Player implements Runnable {
             running = false;
             clearFromBoard();
             if (lives <= 0) {
-                System.out.printf("✖ %s murió%n", name);
+                System.out.printf("XXX %s murió%n", name);
             }
         }
     }
 
     public void stopGracefully() { 
         running = false; 
-        // No limpiar el tablero aquí - lo haremos en finally
     }
 
     public void clearFromBoard() {
-        // Limpiar todas las posiciones donde pueda estar este jugador
         board.clearAllPlayerPositions(this);
-        // Solo resetear coordenadas si el jugador ya no está corriendo
         if (!running) {
             r = -1;
             c = -1;

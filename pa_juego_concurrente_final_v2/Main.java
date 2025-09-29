@@ -26,36 +26,57 @@ public class Main {
         System.out.print("Duración de la partida T en segundos (sugerido 60): ");
         int T = readInt(sc, 10, 600, 60);
 
-        System.out.print("Cantidad de jugadores M (1 a 4): ");
-        int M = readInt(sc, 1, 4, 3);
+        boolean INPUT_DATA = false;
 
-        //System.out.print("Zmin jugador (ms): ");
-        // long Zmin = readLong(sc, 10, 5000, 250);
-        long Zmin = 350; // Más tiempo para planificación equitativa
+        long Zmin = 350;
+        long Zmax = 550;
 
-        //System.out.print("Zmax jugador (ms): ");
-        // long Zmax = readLong(sc, Zmin, 8000, Math.max(500, Zmin+500));
-        long Zmax = 550; // Rango más amplio para variabilidad
+        long Xmin = 800;
+        long Xmax = 1500;
 
-        // System.out.print("Ymin robot monedas (ms): ");
-        // long Ymin = readLong(sc, 10, 5000, 150);
-        long Ymin = 200; // Más lento para dar oportunidades
+        long Ymin = 200;
+        long Ymax = 400;
 
-        // System.out.print("Ymax robot monedas (ms): ");
-        // long Ymax = readLong(sc, Ymin, 8000, Math.max(400, Ymin+400));
-        long Ymax = 400; // Más variabilidad
-
-        // System.out.print("Wmin robot malo (ms): ");
-        // long Wmin = readLong(sc, 10, 5000, 300);
         long Wmin = 800;
-
-        // System.out.print("Wmax robot malo (ms): ");
-        // long Wmax = readLong(sc, Wmin, 8000, Math.max(600, Wmin+300));
         long Wmax = 1500;
 
-        // System.out.print("Cantidad de vidas H a colocar (fijo, +1 por casilla): ");
-        // int H = readInt(sc, 0, N*N, Math.max(1, (int)(0.05*N*N)));
+        int Initial_lifes = 3;
         int H = 8;
+
+        if (INPUT_DATA) {
+            System.out.print("Zmin jugador (ms): ");
+            Zmin = readLong(sc, 10, 5000, 250);
+
+            System.out.print("Zmax jugador (ms): ");
+            Zmax = readLong(sc, Zmin, 8000, Math.max(500, Zmin+500));
+
+            System.out.print("Ymin robot monedas (ms): ");
+            Ymin = readLong(sc, 10, 5000, 150);
+
+            System.out.print("Ymax robot monedas (ms): ");
+            Ymax = readLong(sc, Ymin, 8000, Math.max(400, Ymin+400));
+
+            System.out.print("Xmin robot vidas (ms): ");
+            Xmin = readLong(sc, 10, 5000, 300);
+
+            System.out.print("Xmax robot vidas (ms): ");
+            Xmax = readLong(sc, Wmin, 8000, Math.max(600, Xmin+300));
+
+            System.out.print("Wmin robot malo (ms): ");
+            Wmin = readLong(sc, 10, 5000, 300);
+
+            System.out.print("Wmax robot malo (ms): ");
+            Wmax = readLong(sc, Wmin, 8000, Math.max(600, Wmin+300));
+
+            System.out.print("Cantidad de vidas H a colocar (fijo, +1 por casilla): ");
+            H = readInt(sc, 0, N*N, Math.max(1, (int)(0.05*N*N)));
+
+            System.out.print("Cantidad de vidas iniciales por jugador: ");
+            H = readInt(sc, 1, 10, 3);
+        }
+
+        System.out.print("Cantidad de jugadores M (1 a 4): ");
+        int M = readInt(sc, 1, 4, 3);
 
         List<String> names = new ArrayList<>();
         for (int i=1;i<=M;i++) {
@@ -69,23 +90,20 @@ public class Main {
         Board board = new Board(N, N);
         board.setTargetHeals(H);
 
-        // Robots: colocan ítems UNA VEZ hasta llegar al objetivo
         Thread coinBot = new Thread(new Robot(board, Booster.COIN, Ymin, Ymax), "RobotMonedas");
-        Thread healBot = new Thread(new Robot(board, Booster.HEAL, 200, 400), "RobotVidas");
+        Thread healBot = new Thread(new Robot(board, Booster.HEAL, Xmin, Xmax), "RobotVidas");
         Thread badBot  = new Thread(new Robot(board, Booster.POISON, Wmin, Wmax), "RobotMalo");
 
-        // Jugadores
         List<Player> players = new ArrayList<>();
         List<Thread> threads = new ArrayList<>();
 
         int id=1;
         for (String nm : names) {
-            Player p = new Player(nm, id++, board, 3 /* vidas iniciales */, Zmin, Zmax);
+            Player p = new Player(nm, id++, board, Initial_lifes, Zmin, Zmax);
             players.add(p);
         }
         for (Player p : players) board.placePlayerAtRandom(p);
 
-        // Display thread
         final boolean[] running = { true };
         Thread display = new Thread(() -> {
             try {
@@ -97,12 +115,10 @@ public class Main {
             } catch (InterruptedException ignored) {}
         }, "Display");
 
-        // Start robots first to seed items
         coinBot.start();
         healBot.start();
         badBot.start();
 
-        // Start players
         for (Player p : players) {
             Thread t = new Thread(p, "Player-"+p.name());
             threads.add(t);
