@@ -39,7 +39,7 @@ public class Main {
         long Wmin = 1200;
         long Wmax = 1900;
 
-        int initial_lifes = 3;
+        int initial_lifes = 2;
         int H = (int)Math.floor(N*N*0.10);
 
         if (INPUT_DATA) {
