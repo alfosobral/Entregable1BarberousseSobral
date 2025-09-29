@@ -174,20 +174,6 @@ public class Board {
     public boolean isOccupied(int r, int c) {
         return grid[r][c].hasPlayer();
     }
-
-    public void clearPlayerFromCell(int r, int c, Player p) {
-        if (r >= 0 && r < rows && c >= 0 && c < cols) {
-            Cell cell = grid[r][c];
-            cell.lock().lock();
-            try {
-                if (cell.player() == p) {
-                    cell.clearPlayer();
-                }
-            } finally {
-                cell.lock().unlock();
-            }
-        }
-    }
     
     public void clearAllPlayerPositions(Player p) {
         for (int r = 0; r < rows; r++) {
@@ -235,7 +221,6 @@ public class Board {
                         Booster b = cell.content();
                         if (b == Booster.HEAL) s[i][j] = "+";
                         else if (b == Booster.COIN) s[i][j] = "$";
-                        // Los venenos no se muestran (quedan como '.')
                     }
                 } finally {
                     cell.lock().unlock();
@@ -245,31 +230,4 @@ public class Board {
         return s;
     }
     
-    public char[][] snapshot() {
-        char[][] s = new char[rows][cols];
-        for (int i=0;i<rows;i++) {
-            for (int j=0;j<cols;j++) {
-                s[i][j] = '.';
-            }
-        }
-        for (int i=0;i<rows;i++) {
-            for (int j=0;j<cols;j++) {
-                Cell cell = grid[i][j];
-                cell.lock().lock();
-                try {
-                    if (cell.hasPlayer()) {
-                        int d = cell.player().idDigit();
-                        s[i][j] = (char)('0' + Math.min(Math.max(d,1),9));
-                    } else {
-                        Booster b = cell.content();
-                        if (b == Booster.HEAL) s[i][j] = '+';
-                        else if (b == Booster.COIN) s[i][j] = '$';
-                    }
-                } finally {
-                    cell.lock().unlock();
-                }
-            }
-        }
-        return s;
-    }
 }
