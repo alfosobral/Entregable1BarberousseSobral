@@ -1,15 +1,14 @@
 import Objects.*;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 public class Main {
 
     static void printBoard(Board board) {
         String[][] s = board.snapshotWithColors();
         StringBuilder sb = new StringBuilder();
-        for (int i=0;i<s.length;i++) {
-            for (int j=0;j<s[0].length;j++) {
+        for (int i = 0; i < s.length; i++) {
+            for (int j = 0; j < s[0].length; j++) {
                 sb.append(s[i][j]).append(' ');
             }
             sb.append('\n');
@@ -31,17 +30,17 @@ public class Main {
         long Zmin = 350;
         long Zmax = 550;
 
-        long Xmin = 800;
-        long Xmax = 1500;
+        long Xmin = 1000;
+        long Xmax = 1700;
 
-        long Ymin = 200;
-        long Ymax = 400;
+        long Ymin = 800;
+        long Ymax = 1500;
 
-        long Wmin = 800;
-        long Wmax = 1500;
+        long Wmin = 1200;
+        long Wmax = 1900;
 
-        int Initial_lifes = 3;
-        int H = 8;
+        int initial_lifes = 3;
+        int H = (int)Math.floor(N*N*0.10);
 
         if (INPUT_DATA) {
             System.out.print("Zmin jugador (ms): ");
@@ -72,7 +71,7 @@ public class Main {
             H = readInt(sc, 0, N*N, Math.max(1, (int)(0.05*N*N)));
 
             System.out.print("Cantidad de vidas iniciales por jugador: ");
-            H = readInt(sc, 1, 10, 3);
+            initial_lifes = readInt(sc, 1, 10, 3);
         }
 
         System.out.print("Cantidad de jugadores M (1 a 4): ");
@@ -99,7 +98,7 @@ public class Main {
 
         int id=1;
         for (String nm : names) {
-            Player p = new Player(nm, id++, board, Initial_lifes, Zmin, Zmax);
+            Player p = new Player(nm, id++, board, initial_lifes, Zmin, Zmax);
             players.add(p);
         }
         for (Player p : players) board.placePlayerAtRandom(p);
@@ -108,7 +107,7 @@ public class Main {
         Thread display = new Thread(() -> {
             try {
                 while (running[0]) {
-                    System.out.println("\nTABLERO:");
+                    System.out.println();
                     printBoard(board);
                     Thread.sleep(300);
                 }

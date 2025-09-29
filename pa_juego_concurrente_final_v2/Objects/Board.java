@@ -201,13 +201,13 @@ public class Board {
 
     public String[][] snapshotWithColors() {
         String[][] s = new String[rows][cols];
-        for (int i=0;i<rows;i++) {
-            for (int j=0;j<cols;j++) {
-                s[i][j] = ".";
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                s[i][j] = "|  |";
             }
         }
-        for (int i=0;i<rows;i++) {
-            for (int j=0;j<cols;j++) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
                 Cell cell = grid[i][j];
                 cell.lock().lock();
                 try {
@@ -216,11 +216,11 @@ public class Board {
                         String initials = p.getInitials();
                         String color = p.getColorCode();
                         String reset = Player.getResetColor();
-                        s[i][j] = color + initials + reset;
+                        s[i][j] = "|" + color + initials + reset + "|";
                     } else {
                         Booster b = cell.content();
-                        if (b == Booster.HEAL) s[i][j] = "+";
-                        else if (b == Booster.COIN) s[i][j] = "$";
+                        if (b == Booster.HEAL) s[i][j] = "|++|";
+                        else if (b == Booster.COIN) s[i][j] = "|$$|";
                     }
                 } finally {
                     cell.lock().unlock();

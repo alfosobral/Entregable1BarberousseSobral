@@ -41,7 +41,7 @@ public class Player implements Runnable {
         } else if (words[0].length() >= 2) {
             return words[0].substring(0, 2).toUpperCase();
         } else {
-            return (words[0] + "X").toUpperCase();
+            return (words[0] + " ").toUpperCase();
         }
     }
     
