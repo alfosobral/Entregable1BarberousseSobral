@@ -1,0 +1,5 @@
+==== RESULTADOS DE LA PARTIDA ====
+1) Ana  | monedas=271 | vidas=6
+2) Carlos  | monedas=0 | vidas=2
+3) Diana  | monedas=0 | vidas=2
+4) Bob  | monedas=0 | vidas=0

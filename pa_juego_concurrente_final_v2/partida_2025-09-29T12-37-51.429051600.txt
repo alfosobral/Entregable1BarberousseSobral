@@ -1,0 +1,5 @@
+==== RESULTADOS DE LA PARTIDA ====
+1) Al  | monedas=69 | vidas=4
+2) Ma  | monedas=53 | vidas=6
+3) Lu  | monedas=48 | vidas=3
+4) Ca  | monedas=35 | vidas=6

@@ -1,0 +1,3 @@
+==== RESULTADOS DE LA PARTIDA ====
+1) Al  | monedas=181 | vidas=1
+2) Lu  | monedas=80 | vidas=4
