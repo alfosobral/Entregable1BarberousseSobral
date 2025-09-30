@@ -7,10 +7,12 @@ public class Board {
     private final Cell[][] grid;
     private final int rows, cols, total;
 
+    // Inmutables
     private final AtomicInteger coinCells = new AtomicInteger(0);
     private final AtomicInteger healItems = new AtomicInteger(0);
     private final AtomicInteger traps = new AtomicInteger(0);
 
+    // Visibles inmediatamente entre hilos
     private volatile int targetCoinCells;
     private volatile int targetTraps;
     private volatile int targetHeals;
