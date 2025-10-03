@@ -1,0 +1,3 @@
+==== RESULTADOS PARTIDA CONTINUADA ====
+1) Luciana  | monedas=75 | vidas=2
+2) Alfonso  | monedas=6 | vidas=6
