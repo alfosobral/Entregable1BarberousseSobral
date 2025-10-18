@@ -1,41 +1,11 @@
 import json
+from modelos import Liga, Equipo
 
 class DSLInvalidState(Exception):
     pass
 
 class DSLValidationError(Exception):
     pass
-
-class Jugador:
-    def __init__(self, numero: int, nombre: str):
-        self.numero = numero
-        self.nombre = nombre
-
-    def to_dict(self):
-        return {"numero": self.numero, "nombre": self.nombre}
-
-class Equipo:
-    def __init__(self, nombre: str, codigo: str):
-        self.nombre = nombre
-        self.codigo = codigo.upper() if len(codigo) <= 3 else codigo[:3].upper()
-        self.jugadores = {}
-
-    def agregar_jugador(self, numero: int, nombre: str):
-        if numero <= 0 or numero > 99:
-            raise DSLValidationError(f"Número de camiseta inválido: {numero} (debe ser 1..99).")
-        if numero in self.jugadores:
-            raise DSLValidationError(
-                f"Ya existe un jugador con la camiseta {numero} en {self.codigo}."
-            )
-        self.jugadores[numero] = Jugador(numero, nombre)
-
-    def to_dict(self):
-        return {
-            "nombre": self.nombre,
-            "codigo": self.codigo,
-            "jugadores": [j.to_dict() for j in self.jugadores.values()],
-        }
-
 
 class Liga:
     def __init__(self):
@@ -73,10 +43,6 @@ class DSL:
             raise DSLInvalidState("El DSL ya fue cerrado con .build(). Hay que crear una instancia nueva.")
 
     def equipo(self, nombre: str, codigo: str | None = None):
-
-        # Selecciona/crea un equipo y lo deja como 'equipo actual' para poder encadenar .jugador(...).
-        # Si el código no existe, lo crea. Si existe, lo usa.
-
         self._requerir_no_cerrado()
         codigo = codigo[:3].upper() if codigo else nombre[:3].upper()
         equipo = self._liga.get_equipo(codigo)

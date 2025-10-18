@@ -1,35 +1,7 @@
 from lark import Lark, Transformer, v_args, Tree
 from lark.exceptions import LarkError
-
-
+from modelos import Partido
 from dsl_interno import DSLValidationError
-
-class Partido:
-    def __init__(self, fecha: str, cod_local: str, cod_visitante: str):
-        self.fecha = fecha
-        self.cod_local = cod_local
-        self.cod_visitante = cod_visitante
-        self.formacion_local = None
-        self.formacion_visitante = None
-        self.titulares_local = []
-        self.titulares_visitante = []
-        self.banco_local = []
-        self.banco_visitante = []
-        self.goles = []     # [(cod_equipo, minuto, autor_nro, asist_nro|None)]
-        self.tarjetas = []  # [(cod_equipo, minuto, nro, color)]
-        self.cambios = []   # [(cod_equipo, minuto, j_sale, j_entra)]
-
-    def marcador(self):
-        gl = sum(1 for g in self.goles if g[0] == self.cod_local)
-        gv = sum(1 for g in self.goles if g[0] == self.cod_visitante)
-        return gl, gv
-
-    def ganador(self):
-        gl, gv = self.marcador()
-        if gl > gv: return self.cod_local
-        if gv > gl: return self.cod_visitante
-        return None  # Si hay empate
-    
 
 """
 Aqui definimos la gramática del Lark
